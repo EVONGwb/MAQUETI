@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken"); 
 
-const SECRET = "maqueti_secret"; 
+const SECRET = process.env.JWT_SECRET || "maqueti_secret"; 
 
 const authMiddleware = (req, res, next) => { 
   const authHeader = req.headers.authorization; 

@@ -1,10 +1,26 @@
-import { useState } from "react"; 
+import React, { useEffect, useState } from "react"; 
  
 function App() { 
   const [name, setName] = useState(""); 
   const [email, setEmail] = useState(""); 
   const [password, setPassword] = useState(""); 
   const [message, setMessage] = useState(""); 
+ 
+  const [isLogged, setIsLogged] = useState(false); 
+  const [userEmail, setUserEmail] = useState(""); 
+ 
+  const [title, setTitle] = useState(""); 
+  const [price, setPrice] = useState(""); 
+ 
+  useEffect(() => { 
+    const token = localStorage.getItem("token"); 
+    const savedEmail = localStorage.getItem("userEmail"); 
+ 
+    if (token) { 
+      setIsLogged(true); 
+      setUserEmail(savedEmail || ""); 
+    } 
+  }, []); 
  
   const handleRegister = async () => { 
     try { 
@@ -37,6 +53,9 @@ function App() {
  
       if (data.token) { 
         localStorage.setItem("token", data.token); 
+        localStorage.setItem("userEmail", email); 
+        setIsLogged(true); 
+        setUserEmail(email); 
       } 
  
       setMessage(data.message || "Login completado"); 
@@ -44,6 +63,75 @@ function App() {
       setMessage("Error al iniciar sesión"); 
     } 
   }; 
+ 
+  const handleCreateProduct = async () => { 
+    try { 
+      const token = localStorage.getItem("token"); 
+ 
+      const response = await fetch("http://localhost:3000/api/products", { 
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}`, 
+        }, 
+        body: JSON.stringify({ 
+          title, 
+          price, 
+        }), 
+      }); 
+ 
+      const data = await response.json(); 
+      setMessage(data.message || "Producto creado"); 
+ 
+      setTitle(""); 
+      setPrice(""); 
+    } catch (error) { 
+      setMessage("Error al crear producto"); 
+    } 
+  }; 
+ 
+  const handleLogout = () => { 
+    localStorage.removeItem("token"); 
+    localStorage.removeItem("userEmail"); 
+    setIsLogged(false); 
+    setUserEmail(""); 
+    setMessage("Sesión cerrada"); 
+  }; 
+ 
+  if (isLogged) { 
+    return ( 
+      <div className="app"> 
+        <div className="card"> 
+          <h1>MAQUETI</h1> 
+          <p>Usuario: {userEmail}</p> 
+ 
+          <input 
+            type="text" 
+            placeholder="Nombre del producto" 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+          /> 
+ 
+          <input 
+            type="number" 
+            placeholder="Precio" 
+            value={price} 
+            onChange={(e) => setPrice(e.target.value)} 
+          /> 
+ 
+          <button onClick={handleCreateProduct}> 
+            Crear producto 
+          </button> 
+ 
+          <button onClick={handleLogout}> 
+            Cerrar sesión 
+          </button> 
+ 
+          {message && <p>{message}</p>} 
+        </div> 
+      </div> 
+    ); 
+  } 
  
   return ( 
     <div className="app"> 

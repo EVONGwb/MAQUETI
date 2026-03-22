@@ -2,7 +2,7 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt"); 
  
 const jwt = require("jsonwebtoken"); 
-const SECRET = "maqueti_secret"; 
+const SECRET = process.env.JWT_SECRET || "maqueti_secret"; 
  
 const getUsers = (req, res) => { 
   db.all("SELECT id, name, email FROM users", [], (err, rows) => { 
