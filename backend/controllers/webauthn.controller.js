@@ -8,6 +8,7 @@ const {
 } = require("@simplewebauthn/server");
 
 const SECRET = process.env.JWT_SECRET || "maqueti_secret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 const RP_ID = process.env.WEBAUTHN_RP_ID || "localhost";
 const ORIGIN = process.env.WEBAUTHN_ORIGIN || "http://localhost:5173";
 
@@ -199,7 +200,7 @@ const loginVerify = async (req, res) => {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: JWT_EXPIRES_IN });
     res.json({
       message: "Login correcto",
       token,

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 
 const SECRET = process.env.JWT_SECRET || "maqueti_secret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -59,12 +60,7 @@ const googleLogin = async (req, res) => {
               message: "Error al iniciar sesión",
             });
           }
-
-          const token = jwt.sign(
-            { id: user.id, email: user.email },
-            SECRET,
-            { expiresIn: "1h" }
-          );
+          const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: JWT_EXPIRES_IN });
 
           res.json({
             message: "Login correcto",

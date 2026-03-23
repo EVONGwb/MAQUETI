@@ -195,6 +195,13 @@ h3 {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+
+.cat-chip.active {
+  background: #000;
+  color: #fff;
 }
 
 /* Product Grid */
@@ -363,6 +370,93 @@ h3 {
   font-weight: 600;
   color: #dc3545;
   cursor: pointer;
+}
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-row .logout-btn {
+  margin-top: 0;
+}
+
+.secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  cursor: pointer;
+}
+
+.secondary-btn.full {
+  margin-top: 14px;
+}
+
+.secondary-btn:disabled,
+.icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.product-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  padding: 14px;
+  background: #f8f9fa;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  color: #666;
+  margin: 10px 0 16px 0;
+}
+
+.error {
+  padding: 12px 14px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 12px;
+  color: #b71c1c;
+  margin-top: 14px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.top-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px 0 20px;
+}
+
+.muted {
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.icon-btn {
+  border: 1px solid #eee;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Inventory View */
