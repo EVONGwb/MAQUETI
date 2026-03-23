@@ -6,16 +6,17 @@ const dbPath = path.join(__dirname, "../../storage/maqueti.db");
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-  db.run(`DROP TABLE IF EXISTS users`);
-
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
+      password TEXT NOT NULL,
+      googleSub TEXT
     )
   `);
+
+  db.run(`ALTER TABLE users ADD COLUMN googleSub TEXT`, () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS products (
@@ -23,6 +24,17 @@ db.serialize(() => {
       title TEXT NOT NULL,
       price REAL NOT NULL,
       userId INTEGER,
+      FOREIGN KEY(userId) REFERENCES users(id)
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS passkeys (
+      credentialId TEXT PRIMARY KEY,
+      userId INTEGER NOT NULL,
+      publicKey TEXT NOT NULL,
+      counter INTEGER NOT NULL,
+      transports TEXT,
       FOREIGN KEY(userId) REFERENCES users(id)
     )
   `);

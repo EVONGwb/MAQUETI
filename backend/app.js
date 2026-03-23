@@ -14,10 +14,14 @@ app.use((req, res, next) => {
 }); 
 
 const testRoutes = require("./api/routes/test.routes"); 
+const authRoutes = require("./api/routes/auth.routes"); 
+const webauthnRoutes = require("./api/routes/webauthn.routes"); 
 const userRoutes = require("./api/routes/user.routes"); 
 const productRoutes = require("./api/routes/product.routes"); 
 
 app.use("/api", testRoutes); 
+app.use("/api", authRoutes); 
+app.use("/api", webauthnRoutes); 
 app.use("/api", userRoutes); 
 app.use("/api", productRoutes); 
 

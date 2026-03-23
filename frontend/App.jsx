@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react"; 
+import { startAuthentication, startRegistration } from "@simplewebauthn/browser"; 
  
 function App() { 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"; 
-  const [name, setName] = useState(""); 
-  const [email, setEmail] = useState(""); 
-  const [password, setPassword] = useState(""); 
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ""; 
   const [message, setMessage] = useState(""); 
  
   const [isLogged, setIsLogged] = useState(false); 
@@ -24,6 +23,27 @@ function App() {
       fetchProducts(); 
     } 
   }, []); 
+ 
+  useEffect(() => { 
+    if (isLogged) return; 
+    if (!GOOGLE_CLIENT_ID) return; 
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) return; 
+ 
+    window.google.accounts.id.initialize({ 
+      client_id: GOOGLE_CLIENT_ID, 
+      callback: handleGoogleResponse, 
+    }); 
+ 
+    const el = document.getElementById("googleSignInDiv"); 
+    if (el) { 
+      el.innerHTML = ""; 
+      window.google.accounts.id.renderButton(el, { 
+        theme: "outline", 
+        size: "large", 
+        width: "350", 
+      }); 
+    } 
+  }, [isLogged, GOOGLE_CLIENT_ID]); 
  
   const fetchProducts = async () => { 
     try { 
@@ -48,40 +68,94 @@ function App() {
     } 
   }; 
  
-  const handleRegister = async () => { 
+  const handleRegisterPasskey = async () => { 
     try { 
-      const response = await fetch(`${API_URL}/api/register`, { 
+      const token = localStorage.getItem("token"); 
+ 
+      const optionsResponse = await fetch(`${API_URL}/api/auth/webauthn/register/options`, { 
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+        }, 
+      }); 
+ 
+      const options = await optionsResponse.json(); 
+ 
+      if (!optionsResponse.ok) { 
+        setMessage(options.message || "Error al iniciar huella"); 
+        return; 
+      } 
+ 
+      const attResp = await startRegistration(options); 
+ 
+      const verifyResponse = await fetch(`${API_URL}/api/auth/webauthn/register/verify`, { 
         method: "POST", 
         headers: { 
           "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}`, 
         }, 
-        body: JSON.stringify({ name, email, password }), 
+        body: JSON.stringify(attResp), 
       }); 
  
-      const data = await response.json(); 
-      setMessage(data.message || "Registro completado"); 
+      const verifyData = await verifyResponse.json(); 
+      setMessage(verifyData.message || "Huella registrada"); 
     } catch (error) { 
-      setMessage("Error al registrar usuario"); 
+      setMessage("Error al registrar huella"); 
     } 
   }; 
  
-  const handleLogin = async () => { 
+  const handlePasskeyLogin = async () => { 
     try { 
-      const response = await fetch(`${API_URL}/api/login`, { 
+      const optionsResponse = await fetch(`${API_URL}/api/auth/webauthn/login/options`); 
+      const options = await optionsResponse.json(); 
+ 
+      if (!optionsResponse.ok) { 
+        setMessage(options.message || "Error al iniciar sesión con huella"); 
+        return; 
+      } 
+ 
+      const authResp = await startAuthentication(options); 
+ 
+      const verifyResponse = await fetch(`${API_URL}/api/auth/webauthn/login/verify`, { 
         method: "POST", 
         headers: { 
           "Content-Type": "application/json", 
         }, 
-        body: JSON.stringify({ email, password }), 
+        body: JSON.stringify(authResp), 
       }); 
  
-      const data = await response.json(); 
+      const data = await verifyResponse.json(); 
  
       if (data.token) { 
         localStorage.setItem("token", data.token); 
-        localStorage.setItem("userEmail", email); 
+        localStorage.setItem("userEmail", data.user?.email || ""); 
         setIsLogged(true); 
-        setUserEmail(email); 
+        setUserEmail(data.user?.email || ""); 
+        fetchProducts(); 
+      } 
+ 
+      setMessage(data.message || "Login completado"); 
+    } catch (error) { 
+      setMessage("Error al iniciar sesión con huella"); 
+    } 
+  }; 
+ 
+  const handleGoogleResponse = async (response) => { 
+    try { 
+      const loginResponse = await fetch(`${API_URL}/api/auth/google`, { 
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json", 
+        }, 
+        body: JSON.stringify({ credential: response.credential }), 
+      }); 
+ 
+      const data = await loginResponse.json(); 
+ 
+      if (data.token) { 
+        localStorage.setItem("token", data.token); 
+        localStorage.setItem("userEmail", data.user?.email || ""); 
+        setIsLogged(true); 
+        setUserEmail(data.user?.email || ""); 
         fetchProducts(); 
       } 
  
@@ -154,6 +228,10 @@ function App() {
             Crear producto 
           </button> 
  
+          <button onClick={handleRegisterPasskey}> 
+            Activar huella 
+          </button> 
+ 
           <button onClick={fetchProducts}> 
             Cargar productos 
           </button> 
@@ -184,35 +262,17 @@ function App() {
     <div className="app"> 
       <div className="card"> 
         <h1>MAQUETI</h1> 
-        <p>Accede o crea tu cuenta</p> 
+        <p>Accede con Google</p> 
  
-        <form className="form"> 
-          <input 
-            type="text" 
-            placeholder="Nombre" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-          /> 
-          <input 
-            type="email" 
-            placeholder="Email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-          /> 
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-          /> 
+        {!GOOGLE_CLIENT_ID ? ( 
+          <p>Falta configurar VITE_GOOGLE_CLIENT_ID</p> 
+        ) : ( 
+          <div id="googleSignInDiv"></div> 
+        )} 
  
-          <button type="button" onClick={handleRegister}> 
-            Registrarse 
-          </button> 
-          <button type="button" onClick={handleLogin}> 
-            Iniciar sesión 
-          </button> 
-        </form> 
+        <button type="button" onClick={handlePasskeyLogin}> 
+          Iniciar con huella 
+        </button> 
  
         {message && <p>{message}</p>} 
       </div> 
