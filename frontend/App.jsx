@@ -12,6 +12,7 @@ function App() {
  
   const [title, setTitle] = useState(""); 
   const [price, setPrice] = useState(""); 
+  const [products, setProducts] = useState([]); 
  
   useEffect(() => { 
     const token = localStorage.getItem("token"); 
@@ -20,8 +21,32 @@ function App() {
     if (token) { 
       setIsLogged(true); 
       setUserEmail(savedEmail || ""); 
+      fetchProducts(); 
     } 
   }, []); 
+ 
+  const fetchProducts = async () => { 
+    try { 
+      const token = localStorage.getItem("token"); 
+ 
+      const response = await fetch(`${API_URL}/api/products`, { 
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+        }, 
+      }); 
+ 
+      const data = await response.json(); 
+ 
+      if (!response.ok) { 
+        setMessage(data.message || "Error al obtener productos"); 
+        return; 
+      } 
+ 
+      setProducts(data.products || []); 
+    } catch (error) { 
+      setMessage("Error al obtener productos"); 
+    } 
+  }; 
  
   const handleRegister = async () => { 
     try { 
@@ -57,6 +82,7 @@ function App() {
         localStorage.setItem("userEmail", email); 
         setIsLogged(true); 
         setUserEmail(email); 
+        fetchProducts(); 
       } 
  
       setMessage(data.message || "Login completado"); 
@@ -86,6 +112,10 @@ function App() {
  
       setTitle(""); 
       setPrice(""); 
+ 
+      if (response.ok) { 
+        fetchProducts(); 
+      } 
     } catch (error) { 
       setMessage("Error al crear producto"); 
     } 
@@ -123,6 +153,22 @@ function App() {
           <button onClick={handleCreateProduct}> 
             Crear producto 
           </button> 
+ 
+          <button onClick={fetchProducts}> 
+            Cargar productos 
+          </button> 
+ 
+          {products.length === 0 ? ( 
+            <p>No hay productos</p> 
+          ) : ( 
+            <ul> 
+              {products.map((product) => ( 
+                <li key={product.id}> 
+                  {product.title} - {product.price} 
+                </li> 
+              ))} 
+            </ul> 
+          )} 
  
           <button onClick={handleLogout}> 
             Cerrar sesión 
