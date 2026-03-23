@@ -59,7 +59,7 @@ const getProductById = (req, res) => {
 }; 
  
 const createProduct = (req, res) => { 
-  const { title, price } = req.body; 
+  const { title, price, description, condition, category, location, imageUrl, stock, sku } = req.body; 
   const userId = req.user?.id || req.body.userId; 
  
   if (!title || !price || !userId) { 
@@ -70,9 +70,12 @@ const createProduct = (req, res) => {
  
   const id = Date.now(); 
  
+  const createdAt = Date.now(); 
+  const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock); 
+ 
   db.run( 
-    "INSERT INTO products (id, title, price, userId) VALUES (?, ?, ?, ?)", 
-    [id, title, price, userId], 
+    "INSERT INTO products (id, title, price, userId, description, condition, category, location, imageUrl, stock, sku, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+    [id, title, price, userId, description || null, condition || "Como nuevo", category || "Otros", location || null, imageUrl || null, safeStock, sku || null, createdAt], 
     function (err) { 
       if (err) { 
         return res.status(500).json({ 
@@ -87,6 +90,14 @@ const createProduct = (req, res) => {
           title, 
           price, 
           userId, 
+          description: description || null, 
+          condition: condition || "Como nuevo", 
+          category: category || "Otros", 
+          location: location || null, 
+          imageUrl: imageUrl || null, 
+          stock: safeStock, 
+          sku: sku || null, 
+          createdAt, 
         }, 
       }); 
     } 
@@ -95,7 +106,7 @@ const createProduct = (req, res) => {
  
 const updateProduct = (req, res) => { 
   const { id } = req.params; 
-  const { title, price } = req.body; 
+  const { title, price, description, condition, category, location, imageUrl, stock, sku } = req.body; 
  
   db.get("SELECT * FROM products WHERE id = ?", [id], (err, row) => { 
     if (err) { 
@@ -112,10 +123,17 @@ const updateProduct = (req, res) => {
  
     const updatedTitle = title !== undefined ? title : row.title; 
     const updatedPrice = price !== undefined ? price : row.price; 
+    const updatedDescription = description !== undefined ? description : row.description; 
+    const updatedCondition = condition !== undefined ? condition : row.condition; 
+    const updatedCategory = category !== undefined ? category : row.category; 
+    const updatedLocation = location !== undefined ? location : row.location; 
+    const updatedImageUrl = imageUrl !== undefined ? imageUrl : row.imageUrl; 
+    const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock; 
+    const updatedSku = sku !== undefined ? sku : row.sku; 
  
     db.run( 
-      "UPDATE products SET title = ?, price = ? WHERE id = ?", 
-      [updatedTitle, updatedPrice, id], 
+      "UPDATE products SET title = ?, price = ?, description = ?, condition = ?, category = ?, location = ?, imageUrl = ?, stock = ?, sku = ? WHERE id = ?", 
+      [updatedTitle, updatedPrice, updatedDescription, updatedCondition, updatedCategory, updatedLocation, updatedImageUrl, updatedStock, updatedSku, id], 
       function (err) { 
         if (err) { 
           return res.status(500).json({ 
@@ -130,6 +148,14 @@ const updateProduct = (req, res) => {
             title: updatedTitle, 
             price: updatedPrice, 
             userId: row.userId, 
+            description: updatedDescription, 
+            condition: updatedCondition, 
+            category: updatedCategory, 
+            location: updatedLocation, 
+            imageUrl: updatedImageUrl, 
+            stock: updatedStock, 
+            sku: updatedSku, 
+            createdAt: row.createdAt, 
           }, 
         }); 
       } 

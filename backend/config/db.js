@@ -27,6 +27,15 @@ db.serialize(() => {
       FOREIGN KEY(userId) REFERENCES users(id)
     )
   `);
+ 
+  db.run(`ALTER TABLE products ADD COLUMN description TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN condition TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN category TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN location TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN imageUrl TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN stock INTEGER`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN sku TEXT`, () => {}); 
+  db.run(`ALTER TABLE products ADD COLUMN createdAt INTEGER`, () => {}); 
 
   db.run(`
     CREATE TABLE IF NOT EXISTS passkeys (
