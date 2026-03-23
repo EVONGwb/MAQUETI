@@ -387,7 +387,10 @@ function App() {
       const optsRes = await fetch(`${apiUrl}/api/auth/webauthn/login/options`);
       const opts = await optsRes.json();
       if (!optsRes.ok) throw new Error(opts?.message || "Error al iniciar huella");
+      
+      const { startAuthentication } = await import("@simplewebauthn/browser");
       const assertion = await startAuthentication(opts);
+      
       const verifyRes = await fetch(`${apiUrl}/api/auth/webauthn/login/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -410,7 +413,10 @@ function App() {
       });
       const opts = await optsRes.json();
       if (!optsRes.ok) throw new Error(opts?.message || "Error al iniciar huella");
+      
+      const { startRegistration } = await import("@simplewebauthn/browser");
       const attestation = await startRegistration(opts);
+      
       const verifyRes = await fetch(`${apiUrl}/api/auth/webauthn/register/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
