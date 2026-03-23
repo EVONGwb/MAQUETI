@@ -2,3 +2,4 @@ node_modules/
 storage/maqueti.db 
 .env 
 .DS_Store 
+frontend/dist/ 
