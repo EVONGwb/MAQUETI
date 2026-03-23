@@ -59,7 +59,8 @@ const getProductById = (req, res) => {
 }; 
  
 const createProduct = (req, res) => { 
-  const { title, price, userId } = req.body; 
+  const { title, price } = req.body; 
+  const userId = req.user?.id || req.body.userId; 
  
   if (!title || !price || !userId) { 
     return res.status(400).json({ 
