@@ -71,7 +71,7 @@ const registrationOptions = async (req, res) => {
     const options = await generateRegistrationOptions({
       rpID: RP_ID,
       rpName: "MAQUETI",
-      userID: String(user.id),
+      userID: new Uint8Array(Buffer.from(String(user.id))), // userID MUST be Uint8Array in modern simplewebauthn
       userName: user.email,
       userDisplayName: user.name,
       attestationType: "none",
@@ -88,6 +88,7 @@ const registrationOptions = async (req, res) => {
     registrationChallenges.set(String(user.id), options.challenge);
     res.json(options);
   } catch (error) {
+    console.error("Error en registrationOptions:", error);
     res.status(500).json({ message: "Error al iniciar huella" });
   }
 };
@@ -148,6 +149,7 @@ const loginOptions = async (req, res) => {
     authenticationChallenge = options.challenge;
     res.json(options);
   } catch (error) {
+    console.error("Error en loginOptions:", error);
     res.status(500).json({ message: "Error al iniciar sesión con huella" });
   }
 };
