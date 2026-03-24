@@ -15,6 +15,17 @@ const ORIGIN = process.env.WEBAUTHN_ORIGIN || "http://localhost:5173";
 const registrationChallenges = new Map();
 let authenticationChallenge = null;
 
+const getRpConfigFromRequest = (req) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      return { expectedOrigin: origin, rpID: url.hostname };
+    } catch (error) {}
+  }
+  return { expectedOrigin: ORIGIN, rpID: RP_ID };
+};
+
 const toBase64url = (buffer) =>
   Buffer.from(buffer).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 
@@ -67,11 +78,12 @@ const registrationOptions = async (req, res) => {
     }
 
     const existingPasskeys = await getPasskeysByUserId(user.id);
+    const { expectedOrigin, rpID } = getRpConfigFromRequest(req);
 
     const options = await generateRegistrationOptions({
-      rpID: RP_ID,
+      rpID,
       rpName: "MAQUETI",
-      userID: new Uint8Array(Buffer.from(String(user.id))), // userID MUST be Uint8Array in modern simplewebauthn
+      userID: new Uint8Array(Buffer.from(String(user.id))),
       userName: user.email,
       userDisplayName: user.name,
       attestationType: "none",
@@ -85,7 +97,7 @@ const registrationOptions = async (req, res) => {
       })),
     });
 
-    registrationChallenges.set(String(user.id), options.challenge);
+    registrationChallenges.set(String(user.id), { challenge: options.challenge, expectedOrigin, rpID });
     res.json(options);
   } catch (error) {
     console.error("Error en registrationOptions:", error);
@@ -100,16 +112,16 @@ const registrationVerify = async (req, res) => {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
-    const expectedChallenge = registrationChallenges.get(String(user.id));
-    if (!expectedChallenge) {
+    const stored = registrationChallenges.get(String(user.id));
+    if (!stored || !stored.challenge) {
       return res.status(400).json({ message: "Challenge requerido" });
     }
 
     const verification = await verifyRegistrationResponse({
       response: req.body,
-      expectedChallenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedChallenge: stored.challenge,
+      expectedOrigin: stored.expectedOrigin || ORIGIN,
+      expectedRPID: stored.rpID || RP_ID,
     });
 
     const { verified, registrationInfo } = verification;
@@ -141,12 +153,13 @@ const registrationVerify = async (req, res) => {
 
 const loginOptions = async (req, res) => {
   try {
+    const { expectedOrigin, rpID } = getRpConfigFromRequest(req);
     const options = await generateAuthenticationOptions({
-      rpID: RP_ID,
+      rpID,
       userVerification: "preferred",
     });
 
-    authenticationChallenge = options.challenge;
+    authenticationChallenge = { challenge: options.challenge, expectedOrigin, rpID };
     res.json(options);
   } catch (error) {
     console.error("Error en loginOptions:", error);
@@ -156,7 +169,7 @@ const loginOptions = async (req, res) => {
 
 const loginVerify = async (req, res) => {
   try {
-    if (!authenticationChallenge) {
+    if (!authenticationChallenge || !authenticationChallenge.challenge) {
       return res.status(400).json({ message: "Challenge requerido" });
     }
 
@@ -172,9 +185,9 @@ const loginVerify = async (req, res) => {
 
     const verification = await verifyAuthenticationResponse({
       response: req.body,
-      expectedChallenge: authenticationChallenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedChallenge: authenticationChallenge.challenge,
+      expectedOrigin: authenticationChallenge.expectedOrigin || ORIGIN,
+      expectedRPID: authenticationChallenge.rpID || RP_ID,
       authenticator: {
         credentialID: fromBase64url(passkey.credentialId),
         credentialPublicKey: fromBase64url(passkey.publicKey),
