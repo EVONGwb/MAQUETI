@@ -16,7 +16,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 500px;
+  max-width: 100%;
   margin: 0 auto;
   background: #fff;
   position: relative;
@@ -26,7 +26,7 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 70px; /* space for bottom nav */
+  padding-bottom: 70px; /* space for bottom nav on mobile */
 }
 
 .view-container {
@@ -571,4 +571,117 @@ h3 {
   margin-top: 15px;
   color: #2e7d32;
   font-weight: 500;
+}
+
+/* Desktop Responsive Overrides */
+@media (min-width: 768px) {
+  .app-layout {
+    flex-direction: row;
+  }
+
+  .main-content {
+    padding-bottom: 0;
+    padding-left: 250px; /* space for sidebar */
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 40px;
+    border-top: none;
+    border-right: 1px solid #eee;
+    background: #f8f9fa;
+  }
+
+  .nav-item {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 15px 30px;
+    font-size: 16px;
+    gap: 15px;
+  }
+
+  .add-btn {
+    position: static;
+    margin: 20px 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .add-circle {
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    padding: 12px 24px;
+    gap: 10px;
+  }
+  
+  .add-circle::after {
+    content: "Subir Producto";
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
+  }
+
+  .feed-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+  }
+
+  .feed-item {
+    border-bottom: none;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 15px;
+    background: white;
+  }
+
+  .store-header {
+    margin: -20px -20px 30px -20px;
+  }
+
+  .store-banner {
+    height: 200px;
+  }
+
+  .store-avatar {
+    width: 100px;
+    height: 100px;
+    margin-top: -15px;
+  }
+
+  .store-profile h2 {
+    margin-top: 50px;
+    font-size: 28px;
+  }
+
+  .inventory-metrics {
+    max-width: 600px;
+  }
+
+  .inventory-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+
+  .add-form {
+    max-width: 600px;
+  }
 }
