@@ -151,12 +151,36 @@ const registrationVerify = async (req, res) => {
   }
 };
 
+const getAllPasskeys = () =>
+  new Promise((resolve, reject) => {
+    db.all("SELECT * FROM passkeys", [], (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows || []);
+    });
+  });
+
 const loginOptions = async (req, res) => {
   try {
     const { expectedOrigin, rpID } = getRpConfigFromRequest(req);
+    const allPasskeys = await getAllPasskeys();
+
+    const allowCredentials = allPasskeys.map((p) => {
+      try {
+        return {
+          id: fromBase64url(p.credentialId),
+          type: "public-key",
+          transports: p.transports ? JSON.parse(p.transports) : undefined,
+        };
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
     const options = await generateAuthenticationOptions({
       rpID,
       userVerification: "preferred",
+      allowCredentials,
+      timeout: 120000,
     });
 
     authenticationChallenge = { challenge: options.challenge, expectedOrigin, rpID };
