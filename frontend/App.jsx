@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { Home, Search, PlusSquare, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw } from "lucide-react";
+import { Home, Search, PlusSquare, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart } from "lucide-react";
 
 const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
@@ -32,21 +32,27 @@ const priceLabel = (value) => {
   return `${Number(value)} €`;
 };
 
-const ProductCard = ({ product }) => (
-  <div className="product-card">
-    <div className="product-img placeholder-img"></div>
-    <div className="product-info">
-      <h4>{product.title}</h4>
-      <div className="product-meta">
-        <span className="tag new">{product.condition || "—"}</span>
-        {product.location ? <span className="tag zone">{product.location}</span> : null}
+const ProductCard = ({ product }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="product-card" onClick={() => navigate(`/product/${product.id}`)} style={{cursor: 'pointer'}}>
+      <div 
+        className="product-img placeholder-img" 
+        style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      ></div>
+      <div className="product-info">
+        <h4>{product.title}</h4>
+        <div className="product-meta">
+          <span className="tag new">{product.condition || "—"}</span>
+          {product.location ? <span className="tag zone">{product.location}</span> : null}
+        </div>
+        <p className="price">{priceLabel(product.price)}</p>
       </div>
-      <p className="price">{priceLabel(product.price)}</p>
     </div>
-  </div>
-);
+  );
+};
 
-const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory }) => {
+const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading }) => {
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
     if (!search) return byCategory;
@@ -83,37 +89,174 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
       </div>
 
       <h3>Cerca de ti</h3>
-      {filtered.length === 0 ? <div className="empty-state">No hay productos todavía.</div> : null}
-      <div className="product-grid">
-        {filtered.slice(0, 12).map((p) => (
-          <ProductCard key={p.id} product={p} />
+      {loading ? (
+        <div className="product-grid">
+          {[1,2,3,4].map(n => <div key={n} className="skeleton skeleton-card"></div>)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state">No hay productos todavía.</div>
+      ) : (
+        <div className="product-grid">
+          {filtered.slice(0, 12).map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ExploreView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory }) => {
+  const navigate = useNavigate();
+  const filtered = useMemo(() => {
+    const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
+    if (!search) return byCategory;
+    const q = search.toLowerCase();
+    return byCategory.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.description || "").toLowerCase().includes(q));
+  }, [products, search, activeCategory]);
+
+  return (
+    <div className="view-container">
+      <div className="search-bar">
+        <Search size={20} color="#666" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} type="text" placeholder="Buscar en todo el catálogo..." />
+      </div>
+
+      <div className="categories" style={{ marginBottom: '20px' }}>
+        <button className={`cat-chip ${activeCategory ? "" : "active"}`} type="button" onClick={() => setActiveCategory("")}>
+          Todos
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c}
+            className={`cat-chip ${activeCategory === c ? "active" : ""}`}
+            type="button"
+            onClick={() => setActiveCategory(c)}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <h2>Explorar {activeCategory ? `- ${activeCategory}` : ""}</h2>
+      {filtered.length === 0 ? <div className="empty-state">No se encontraron productos con esos filtros.</div> : null}
+      <div className="feed-list">
+        {filtered.map((p) => (
+          <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`)} style={{cursor: 'pointer'}}>
+            <div 
+              className="feed-img placeholder-img"
+              style={p.imageUrl ? { backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            ></div>
+            <div className="feed-details">
+              <h4>{p.title}</h4>
+              <div className="product-meta">
+                <span className="tag new">{p.condition || "—"}</span>
+                {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
+              </div>
+              <p className="price-large">{priceLabel(p.price)}</p>
+            </div>
+          </div>
         ))}
       </div>
     </div>
   );
 };
 
-const ExploreView = ({ products }) => (
-  <div className="view-container">
-    <h2>Explorar</h2>
-    {products.length === 0 ? <div className="empty-state">Aún no hay productos publicados.</div> : null}
-    <div className="feed-list">
-      {products.map((p) => (
-        <div key={p.id} className="feed-item">
-          <div className="feed-img placeholder-img"></div>
-          <div className="feed-details">
-            <h4>{p.title}</h4>
-            <div className="product-meta">
-              <span className="tag new">{p.condition || "—"}</span>
-              {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
-            </div>
-            <p className="price-large">{priceLabel(p.price)}</p>
-          </div>
+const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const product = products.find((p) => String(p.id) === String(id));
+
+  if (!product) {
+    return (
+      <div className="view-container">
+        <div className="back-btn" onClick={() => navigate(-1)}><ChevronLeft /></div>
+        <div className="empty-state" style={{marginTop: '60px'}}>Producto no encontrado</div>
+      </div>
+    );
+  }
+
+  const isFav = favorites.includes(product.id);
+
+  return (
+    <div className="product-detail-view">
+      <div 
+        className="product-detail-image"
+        style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl})` } : {}}
+      >
+        <div className="back-btn" onClick={() => navigate(-1)}><ChevronLeft /></div>
+      </div>
+      
+      <div className="product-detail-content">
+        <p className="product-detail-price">{priceLabel(product.price)}</p>
+        <h2 className="product-detail-title">{product.title}</h2>
+        
+        <div className="product-detail-meta">
+          <span className="tag new">{product.condition || "—"}</span>
+          <span className="tag zone">{product.category || "Otros"}</span>
+          {product.location && <span className="tag zone">{product.location}</span>}
         </div>
-      ))}
+
+        <h3>Descripción</h3>
+        <p className="product-detail-desc">
+          {product.description || "El vendedor no ha añadido una descripción para este producto."}
+        </p>
+
+        {product.stock !== null && product.stock !== undefined && (
+          <p style={{color: '#666', fontSize: '14px', marginBottom: '20px'}}>
+            Stock disponible: <strong>{product.stock}</strong> unidades
+          </p>
+        )}
+
+        <div className="action-bar">
+          <button className="chat-btn">Contactar vendedor</button>
+          <button 
+            className="chat-btn" 
+            style={{background: isFav ? '#ff5a00' : '#fff', color: isFav ? '#fff' : '#ff5a00', border: '1px solid #ff5a00', transition: 'all 0.2s'}}
+            onClick={() => toggleFavorite(product.id)}
+          >
+            <Heart size={20} fill={isFav ? "white" : "none"} />
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+const FavoritesView = ({ products, favorites }) => {
+  const navigate = useNavigate();
+  const favProducts = useMemo(() => {
+    return products.filter((p) => favorites.includes(p.id));
+  }, [products, favorites]);
+
+  return (
+    <div className="view-container">
+      <h2>Mis Favoritos</h2>
+      {favProducts.length === 0 ? (
+        <div className="empty-state">No tienes ningún producto en favoritos.</div>
+      ) : (
+        <div className="feed-list">
+          {favProducts.map((p) => (
+            <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`)} style={{cursor: 'pointer'}}>
+              <div 
+                className="feed-img placeholder-img"
+                style={p.imageUrl ? { backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              ></div>
+              <div className="feed-details">
+                <h4>{p.title}</h4>
+                <div className="product-meta">
+                  <span className="tag new">{p.condition || "—"}</span>
+                  {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
+                </div>
+                <p className="price-large">{priceLabel(p.price)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const StoreView = ({ user, myProducts, onLogout, onRegisterPasskey, passkeyMessage }) => (
   <div className="view-container">
@@ -154,8 +297,8 @@ const StoreView = ({ user, myProducts, onLogout, onRegisterPasskey, passkeyMessa
     </div>
     {myProducts.length === 0 ? <div className="empty-state">Publica tu primer producto.</div> : null}
     <div className="product-grid">
-      {myProducts.map((p) => (
-        <ProductCard key={p.id} product={p} />
+      {myProducts.map((product) => (
+        <ProductCard key={product.id} product={product} />
       ))}
     </div>
   </div>
@@ -208,10 +351,50 @@ const AddProductView = ({ token, onCreated }) => {
   const [location, setLocation] = useState("");
   const [sku, setSku] = useState("");
   const [message, setMessage] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImageToCloudinary = async (file) => {
+    // We use a free preset for demo purposes. In production, use your own Cloudinary preset/cloud name.
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "ml_default"); // public demo preset
+
+    try {
+      const res = await fetch("https://api.cloudinary.com/v1_1/demo/image/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      return data.secure_url;
+    } catch (e) {
+      console.error("Cloudinary upload error", e);
+      return null;
+    }
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setUploading(true);
+    setMessage("");
+
     try {
+      let uploadedUrl = "";
+      if (imageFile) {
+        uploadedUrl = await uploadImageToCloudinary(imageFile);
+      }
+
       const apiUrl = getApiUrl();
       const response = await fetch(`${apiUrl}/api/products`, {
         method: "POST",
@@ -227,22 +410,28 @@ const AddProductView = ({ token, onCreated }) => {
           condition,
           location: location || null,
           sku: sku || null,
+          imageUrl: uploadedUrl || null
         }),
       });
+      
       const data = await response.json();
+      if (!response.ok) throw new Error(data?.message);
+      
       setMessage(data.message || "Producto creado");
-      if (response.ok) {
-        setTitle("");
-        setPrice("");
-        setStock("");
-        setCategory("Otros");
-        setCondition("Como nuevo");
-        setLocation("");
-        setSku("");
-        onCreated();
-      }
-    } catch {
-      setMessage("Error al crear producto");
+      setTitle("");
+      setPrice("");
+      setStock("");
+      setCategory("Otros");
+      setCondition("Como nuevo");
+      setLocation("");
+      setSku("");
+      setImageFile(null);
+      setImagePreview("");
+      onCreated();
+    } catch (err) {
+      setMessage(err?.message || "Error al crear producto");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -250,9 +439,10 @@ const AddProductView = ({ token, onCreated }) => {
     <div className="view-container">
       <h2>Subir Producto</h2>
       <form className="add-form" onSubmit={handleCreate}>
-        <div className="image-upload">
-          <span>+ Añadir fotos</span>
-        </div>
+        <label className="image-upload" style={imagePreview ? { backgroundImage: `url(${imagePreview})`, backgroundSize: 'cover', backgroundPosition: 'center', border: 'none' } : {}}>
+          {!imagePreview && <span>+ Añadir fotos</span>}
+          <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+        </label>
         <input type="text" placeholder="Título del producto" value={title} onChange={(e) => setTitle(e.target.value)} required />
         <input type="number" placeholder="Precio (€)" value={price} onChange={(e) => setPrice(e.target.value)} required />
         <div className="row-inputs">
@@ -264,7 +454,9 @@ const AddProductView = ({ token, onCreated }) => {
           <input type="text" placeholder="Condición" value={condition} onChange={(e) => setCondition(e.target.value)} />
         </div>
         <input type="text" placeholder="Ubicación (opcional)" value={location} onChange={(e) => setLocation(e.target.value)} />
-        <button type="submit" className="primary-btn">Publicar</button>
+        <button type="submit" className="primary-btn" disabled={uploading}>
+          {uploading ? "Publicando..." : "Publicar"}
+        </button>
       </form>
       {message ? <p className="msg">{message}</p> : null}
     </div>
@@ -282,8 +474,22 @@ function App() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [passkeyMessage, setPasskeyMessage] = useState("");
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem("favorites");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (id) => {
+    setFavorites((prev) => 
+      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
+    );
+  };
   const location = useLocation();
 
   const categories = useMemo(() => {
@@ -477,23 +683,9 @@ function App() {
             <RefreshCcw size={18} />
           </button>
         </div>
-        {error ? <div className="error">{error}</div> : null}
-        {loading ? <div className="empty-state">Cargando...</div> : null}
         <Routes>
-          <Route
-            path="/"
-            element={
-              <HomeView
-                products={products}
-                search={search}
-                setSearch={setSearch}
-                categories={categories}
-                activeCategory={activeCategory}
-                setActiveCategory={setActiveCategory}
-              />
-            }
-          />
-          <Route path="/explore" element={<ExploreView products={products} />} />
+          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} />} />
+          <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
           <Route path="/add" element={<AddProductView token={token} onCreated={() => refreshData(token, user)} />} />
           <Route path="/inventory" element={<InventoryView myProducts={myProducts} />} />
           <Route
@@ -508,6 +700,8 @@ function App() {
               />
             }
           />
+          <Route path="/product/:id" element={<ProductDetailView products={products} toggleFavorite={toggleFavorite} favorites={favorites} />} />
+          <Route path="/favorites" element={<FavoritesView products={products} favorites={favorites} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
@@ -526,9 +720,9 @@ function App() {
             <PlusSquare size={24} color="white" />
           </div>
         </div>
-        <div className={`nav-item ${activePath === "/inventory" ? "active" : ""}`} onClick={() => navigate("/inventory")}>
-          <Package size={24} />
-          <span>Stock</span>
+        <div className={`nav-item ${activePath === "/favorites" ? "active" : ""}`} onClick={() => navigate("/favorites")}>
+          <Heart size={24} />
+          <span>Favoritos</span>
         </div>
         <div className={`nav-item ${activePath === "/store" ? "active" : ""}`} onClick={() => navigate("/store")}>
           <StoreIcon size={24} />

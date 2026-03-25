@@ -685,3 +685,102 @@ h3 {
     max-width: 600px;
   }
 }
+
+/* Product Detail View */
+.product-detail-view {
+  padding-bottom: 30px;
+}
+
+.product-detail-image {
+  width: 100%;
+  height: 350px;
+  background-color: #eee;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+.product-detail-content {
+  padding: 20px;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  margin-top: -24px;
+  position: relative;
+}
+
+.product-detail-price {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ff5a00;
+  margin: 0 0 10px 0;
+}
+
+.product-detail-title {
+  font-size: 22px;
+  margin: 0 0 15px 0;
+}
+
+.product-detail-meta {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.product-detail-desc {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #555;
+  margin-bottom: 30px;
+  white-space: pre-wrap;
+}
+
+.action-bar {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.chat-btn {
+  flex: 1;
+  background: #000;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Skeletons */
+.skeleton {
+  background: linear-gradient(90deg, #eee 25%, #e0e0e0 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 12px;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  height: 200px;
+  margin-bottom: 15px;
+}

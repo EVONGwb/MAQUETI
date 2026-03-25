@@ -78,10 +78,11 @@ const createProduct = async (req, res) => {
     const id = Date.now();
     const createdAt = Date.now();
     const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock);
+    const finalImageUrl = imageUrl || "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
 
     await dbRun(
       "INSERT INTO products (id, title, price, userId, description, condition, category, location, imageUrl, stock, sku, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, title, price, userId, description || null, condition || "Como nuevo", category || "Otros", location || null, imageUrl || null, safeStock, sku || null, createdAt]
+      [id, title, price, userId, description || null, condition || "Como nuevo", category || "Otros", location || null, finalImageUrl, safeStock, sku || null, createdAt]
     );
 
     return res.status(201).json({
