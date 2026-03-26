@@ -47,6 +47,41 @@ db.serialize(() => {
       FOREIGN KEY(userId) REFERENCES users(id)
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      productId INTEGER NOT NULL,
+      buyerId INTEGER NOT NULL,
+      sellerId INTEGER NOT NULL,
+      lastMessage TEXT NOT NULL DEFAULT '',
+      lastMessageAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+      createdAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+      updatedAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+      FOREIGN KEY(productId) REFERENCES products(id),
+      FOREIGN KEY(buyerId) REFERENCES users(id),
+      FOREIGN KEY(sellerId) REFERENCES users(id)
+    )
+  `);
+
+  db.run(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_unique ON conversations(productId, buyerId, sellerId)"
+  );
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversationId INTEGER NOT NULL,
+      senderId INTEGER NOT NULL,
+      text TEXT,
+      images TEXT NOT NULL DEFAULT '[]',
+      readBy TEXT NOT NULL DEFAULT '[]',
+      createdAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+      updatedAt INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+      FOREIGN KEY(conversationId) REFERENCES conversations(id),
+      FOREIGN KEY(senderId) REFERENCES users(id)
+    )
+  `);
 });
 
 module.exports = db;

@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { Home, Search, PlusSquare, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart } from "lucide-react";
+import { Home, Search, PlusSquare, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
 
 const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
@@ -184,22 +184,20 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
     try {
       const apiUrl = getApiUrl();
       const token = localStorage.getItem("token") || "";
-      const res = await fetch(`${apiUrl}/api/users`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      if (!token) throw new Error("Debes iniciar sesión para contactar al vendedor");
+
+      const res = await fetch(`${apiUrl}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId: product.id })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "No se pudo obtener el vendedor");
+      if (!res.ok) throw new Error(data?.message || "No se pudo iniciar la conversación");
 
-      const seller = (data.users || []).find((u) => String(u.id) === String(product.userId));
-      if (!seller?.email) {
-        throw new Error("No se encontró el email del vendedor");
-      }
-
-      const subject = encodeURIComponent(`MAQUETI - Consulta por producto: ${product.title}`);
-      const body = encodeURIComponent(
-        `Hola,\n\nEstoy interesado/a en tu producto:\n- ${product.title}\n- Precio: ${priceLabel(product.price)}\n- ID: ${product.id}\n\n¿Sigue disponible?\n\nGracias.`
-      );
-      window.location.href = `mailto:${seller.email}?subject=${subject}&body=${body}`;
+      navigate(`/chats/${data.conversation.id}`);
     } catch (e) {
       setContactMessage(e?.message || "No se pudo contactar con el vendedor");
     }
@@ -247,6 +245,280 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
         </div>
         {contactMessage ? <div className="error" style={{ marginTop: "12px" }}>{contactMessage}</div> : null}
       </div>
+    </div>
+  );
+};
+
+const ChatListView = ({ token, user }) => {
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}/api/conversations`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Error al cargar chats");
+        setConversations(data.conversations || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (token) fetchConversations();
+  }, [token]);
+
+  if (loading) return <div className="view-container">Cargando chats...</div>;
+  if (error) return <div className="view-container"><div className="error">{error}</div></div>;
+
+  return (
+    <div className="view-container">
+      <h2>Mensajes</h2>
+      {conversations.length === 0 ? (
+        <div className="empty-state">No tienes conversaciones todavía.</div>
+      ) : (
+        <div className="feed-list">
+          {conversations.map(conv => {
+            const isBuyer = String(conv.buyerId) === String(user?.id);
+            const otherName = isBuyer ? conv.sellerName : conv.buyerName;
+            
+            return (
+              <div key={conv.id} className="feed-item" onClick={() => navigate(`/chats/${conv.id}`)} style={{cursor: 'pointer'}}>
+                <div 
+                  className="feed-img placeholder-img"
+                  style={conv.productImageUrl ? { backgroundImage: `url(${conv.productImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', width: '60px', height: '60px', flexShrink: 0 } : { width: '60px', height: '60px', flexShrink: 0 }}
+                ></div>
+                <div className="feed-details" style={{display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                  <h4 style={{margin: '0 0 4px 0', fontSize: '15px'}}>{conv.productTitle}</h4>
+                  <p style={{margin: 0, fontSize: '13px', color: '#666'}}>Con: {otherName || "Usuario"}</p>
+                  <p style={{margin: '4px 0 0 0', fontSize: '14px', color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                    {conv.lastMessage}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ChatDetailView = ({ token, user }) => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState([]);
+  const [convData, setConvData] = useState(null);
+  const [text, setText] = useState("");
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  const fetchChat = async () => {
+    try {
+      const apiUrl = getApiUrl();
+      const [convRes, msgRes] = await Promise.all([
+        fetch(`${apiUrl}/api/conversations/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/conversations/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      if (!convRes.ok || !msgRes.ok) throw new Error("Error al cargar la conversación");
+      
+      const convJson = await convRes.json();
+      const msgJson = await msgRes.json();
+      
+      setConvData(convJson.conversation);
+      setMessages(msgJson.messages || []);
+      
+      // Marcar leídos
+      fetch(`${apiUrl}/api/conversations/${id}/read`, { 
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token && id) fetchChat();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (images.length + files.length > 5) {
+      alert("Máximo 5 imágenes por mensaje");
+      return;
+    }
+    setImages(prev => [...prev, ...files]);
+  };
+
+  const removeImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!text.trim() && images.length === 0) return;
+    
+    setSending(true);
+    try {
+      const apiUrl = getApiUrl();
+      const formData = new FormData();
+      if (text.trim()) formData.append("text", text);
+      images.forEach(img => formData.append("images", img));
+
+      const res = await fetch(`${apiUrl}/api/conversations/${id}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Error al enviar mensaje");
+      
+      setText("");
+      setImages([]);
+      await fetchChat();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) return <div className="view-container">Cargando...</div>;
+  if (!convData) return <div className="view-container">Conversación no encontrada</div>;
+
+  const isBuyer = String(convData.buyerId) === String(user?.id);
+  const otherName = isBuyer ? convData.sellerName : convData.buyerName;
+  const apiUrl = getApiUrl();
+
+  return (
+    <div className="chat-layout" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+      <div className="chat-header" style={{padding: '15px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: '15px', background: '#fff', position: 'sticky', top: 0, zIndex: 10}}>
+        <div className="back-btn" style={{position: 'static', margin: 0}} onClick={() => navigate(-1)}><ChevronLeft /></div>
+        <div style={{flex: 1, display: 'flex', alignItems: 'center', gap: '10px'}}>
+          <div className="placeholder-img" style={{width: '40px', height: '40px', borderRadius: '8px', backgroundImage: `url(${convData.productImageUrl})`, backgroundSize: 'cover'}}></div>
+          <div>
+            <h4 style={{margin: 0, fontSize: '15px'}}>{convData.productTitle}</h4>
+            <p style={{margin: 0, fontSize: '12px', color: '#666'}}>{otherName}</p>
+          </div>
+        </div>
+        <div style={{fontWeight: 'bold', color: '#ff5a00'}}>{priceLabel(convData.productPrice)}</div>
+      </div>
+
+      <div className="chat-messages" style={{flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8f9fa'}}>
+        {messages.map(msg => {
+          const isMine = String(msg.senderId) === String(user?.id);
+          return (
+            <div key={msg.id} style={{alignSelf: isMine ? 'flex-end' : 'flex-start', maxWidth: '80%'}}>
+              <div style={{
+                background: isMine ? '#ff5a00' : '#fff',
+                color: isMine ? '#fff' : '#333',
+                padding: '10px 15px',
+                borderRadius: '16px',
+                borderBottomRightRadius: isMine ? '4px' : '16px',
+                borderBottomLeftRadius: isMine ? '16px' : '4px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              }}>
+                {msg.text && <p style={{margin: 0, wordBreak: 'break-word'}}>{msg.text}</p>}
+                
+                {msg.images && msg.images.length > 0 && (
+                  <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: msg.text ? '8px' : '0'}}>
+                    {msg.images.map((img, i) => (
+                      <img 
+                        key={i} 
+                        src={`${apiUrl}${img}`} 
+                        alt="adjunto" 
+                        style={{width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer'}}
+                        onClick={() => setPreviewImage(`${apiUrl}${img}`)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{fontSize: '11px', color: '#999', marginTop: '4px', textAlign: isMine ? 'right' : 'left'}}>
+                {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="chat-input" style={{padding: '10px', background: '#fff', borderTop: '1px solid #eee', paddingBottom: 'calc(10px + env(safe-area-inset-bottom))'}}>
+        {images.length > 0 && (
+          <div style={{display: 'flex', gap: '10px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '5px'}}>
+            {images.map((file, i) => (
+              <div key={i} style={{position: 'relative', width: '60px', height: '60px', flexShrink: 0}}>
+                <img src={URL.createObjectURL(file)} alt="preview" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px'}} />
+                <button 
+                  type="button"
+                  onClick={() => removeImage(i)}
+                  style={{position: 'absolute', top: '-5px', right: '-5px', background: '#ff3333', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0}}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <form onSubmit={handleSend} style={{display: 'flex', alignItems: 'flex-end', gap: '10px'}}>
+          <input 
+            type="file" 
+            multiple 
+            accept="image/jpeg,image/png,image/webp" 
+            ref={fileInputRef} 
+            style={{display: 'none'}} 
+            onChange={handleImageSelect}
+          />
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={{background: 'none', border: 'none', padding: '10px', color: '#666', cursor: 'pointer'}}>
+            <ImageIcon size={24} />
+          </button>
+          <textarea 
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Escribe un mensaje..."
+            style={{flex: 1, border: '1px solid #ddd', borderRadius: '20px', padding: '10px 15px', resize: 'none', outline: 'none', fontFamily: 'inherit', fontSize: '15px', maxHeight: '100px'}}
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}
+          />
+          <button type="submit" disabled={sending || (!text.trim() && images.length === 0)} style={{background: '#ff5a00', color: 'white', border: 'none', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: (sending || (!text.trim() && images.length === 0)) ? 0.5 : 1}}>
+            <Send size={20} style={{marginLeft: '-2px'}} />
+          </button>
+        </form>
+      </div>
+
+      {previewImage && (
+        <div style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}} onClick={() => setPreviewImage(null)}>
+          <button style={{position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'white', cursor: 'pointer'}} onClick={() => setPreviewImage(null)}>
+            <X size={32} />
+          </button>
+          <img src={previewImage} alt="Preview" style={{maxWidth: '90%', maxHeight: '90%', objectFit: 'contain'}} />
+        </div>
+      )}
     </div>
   );
 };
@@ -373,6 +645,7 @@ const InventoryView = ({ myProducts }) => {
 const AddProductView = ({ token, onCreated }) => {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
   const [category, setCategory] = useState("Otros");
   const [condition, setCondition] = useState("Como nuevo");
@@ -444,6 +717,7 @@ const AddProductView = ({ token, onCreated }) => {
         body: JSON.stringify({
           title,
           price: Number(price),
+          description: description || null,
           stock: stock === "" ? null : Number(stock),
           category,
           condition,
@@ -459,6 +733,7 @@ const AddProductView = ({ token, onCreated }) => {
       setMessage(data.message || "Producto creado");
       setTitle("");
       setPrice("");
+      setDescription("");
       setStock("");
       setCategory("Otros");
       setCondition("Como nuevo");
@@ -493,6 +768,7 @@ const AddProductView = ({ token, onCreated }) => {
           <input type="text" placeholder="Condición" value={condition} onChange={(e) => setCondition(e.target.value)} />
         </div>
         <input type="text" placeholder="Ubicación (opcional)" value={location} onChange={(e) => setLocation(e.target.value)} />
+        <textarea placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
         <button type="submit" className="primary-btn" disabled={uploading}>
           {uploading ? "Publicando..." : "Publicar"}
         </button>
@@ -745,6 +1021,8 @@ function App() {
             }
           />
           <Route path="/product/:id" element={<ProductDetailView products={products} toggleFavorite={toggleFavorite} favorites={favorites} />} />
+          <Route path="/chats" element={<ChatListView token={token} user={user} />} />
+          <Route path="/chats/:id" element={<ChatDetailView token={token} user={user} />} />
           <Route path="/favorites" element={<FavoritesView products={products} favorites={favorites} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -763,6 +1041,10 @@ function App() {
           <div className="add-circle">
             <PlusSquare size={24} color="white" />
           </div>
+        </div>
+        <div className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} onClick={() => navigate("/chats")}>
+          <MessageCircle size={24} />
+          <span>Buzón</span>
         </div>
         <div className={`nav-item ${activePath === "/favorites" ? "active" : ""}`} onClick={() => navigate("/favorites")}>
           <Heart size={24} />
