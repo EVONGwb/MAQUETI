@@ -665,6 +665,9 @@ function App() {
   const activePath = location.pathname;
 
   if (!isLogged) {
+    const googleClientId = typeof window !== "undefined" ? window.__MAQUETI_GOOGLE_CLIENT_ID : "";
+    const origin = typeof window !== "undefined" ? window.__MAQUETI_ORIGIN : "";
+
     return (
       <div className="login-screen">
         <div className="login-card">
@@ -679,6 +682,8 @@ function App() {
             <Fingerprint size={18} /> Entrar con huella
           </button>
 
+          {origin ? <div className="muted" style={{ marginTop: "12px" }}>Origen: {origin}</div> : null}
+          {googleClientId ? <div className="muted">Client ID: {googleClientId}</div> : null}
           {error ? <div className="error">{error}</div> : null}
         </div>
       </div>
