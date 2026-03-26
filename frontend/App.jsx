@@ -166,6 +166,7 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const product = products.find((p) => String(p.id) === String(id));
+  const [contactMessage, setContactMessage] = useState("");
 
   if (!product) {
     return (
@@ -177,6 +178,32 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
   }
 
   const isFav = favorites.includes(product.id);
+
+  const handleContactSeller = async () => {
+    setContactMessage("");
+    try {
+      const apiUrl = getApiUrl();
+      const token = localStorage.getItem("token") || "";
+      const res = await fetch(`${apiUrl}/api/users`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "No se pudo obtener el vendedor");
+
+      const seller = (data.users || []).find((u) => String(u.id) === String(product.userId));
+      if (!seller?.email) {
+        throw new Error("No se encontró el email del vendedor");
+      }
+
+      const subject = encodeURIComponent(`MAQUETI - Consulta por producto: ${product.title}`);
+      const body = encodeURIComponent(
+        `Hola,\n\nEstoy interesado/a en tu producto:\n- ${product.title}\n- Precio: ${priceLabel(product.price)}\n- ID: ${product.id}\n\n¿Sigue disponible?\n\nGracias.`
+      );
+      window.location.href = `mailto:${seller.email}?subject=${subject}&body=${body}`;
+    } catch (e) {
+      setContactMessage(e?.message || "No se pudo contactar con el vendedor");
+    }
+  };
 
   return (
     <div className="product-detail-view">
@@ -209,7 +236,7 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
         )}
 
         <div className="action-bar">
-          <button className="chat-btn">Contactar vendedor</button>
+          <button className="chat-btn" onClick={handleContactSeller}>Contactar vendedor</button>
           <button 
             className="chat-btn" 
             style={{background: isFav ? '#ff5a00' : '#fff', color: isFav ? '#fff' : '#ff5a00', border: '1px solid #ff5a00', transition: 'all 0.2s'}}
@@ -218,6 +245,7 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
             <Heart size={20} fill={isFav ? "white" : "none"} />
           </button>
         </div>
+        {contactMessage ? <div className="error" style={{ marginTop: "12px" }}>{contactMessage}</div> : null}
       </div>
     </div>
   );
