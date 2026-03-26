@@ -355,8 +355,8 @@ const AddProductView = ({ token, onCreated }) => {
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
-  const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "";
+  const CLOUDINARY_CLOUD_NAME = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "").trim();
+  const CLOUDINARY_UPLOAD_PRESET = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "").trim();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -384,7 +384,7 @@ const AddProductView = ({ token, onCreated }) => {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data?.error?.message || "No se pudo subir la imagen");
+      throw new Error(data?.error?.message || `No se pudo subir la imagen (cloud: ${CLOUDINARY_CLOUD_NAME}, preset: ${CLOUDINARY_UPLOAD_PRESET})`);
     }
     if (!data?.secure_url) {
       throw new Error("No se pudo obtener la URL de la imagen");
