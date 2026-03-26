@@ -10,6 +10,22 @@ const getApiUrl = () => {
   return "https://maqueti.onrender.com";
 };
 
+const parseJsonResponse = async (res) => {
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  if (ct.includes("application/json")) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+  const bodyText = await res.text();
+  const err = new Error(`Respuesta inesperada del servidor (HTTP ${res.status})`);
+  err.nonJson = true;
+  err.bodyText = bodyText;
+  throw err;
+};
+
 const decodeJwtPayload = (token) => {
   try {
     const part = token.split(".")[1];
@@ -194,12 +210,16 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
         },
         body: JSON.stringify({ productId: product.id })
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (!res.ok) throw new Error(data?.message || "No se pudo iniciar la conversación");
 
       navigate(`/chats/${data.conversation.id}`);
     } catch (e) {
-      setContactMessage(e?.message || "No se pudo contactar con el vendedor");
+      if (e?.nonJson) {
+        setContactMessage("Respuesta inesperada del servidor. Revisa que VITE_API_URL apunte al backend.");
+      } else {
+        setContactMessage(e?.message || "No se pudo contactar con el vendedor");
+      }
     }
   };
 
@@ -262,11 +282,15 @@ const ChatListView = ({ token, user }) => {
         const res = await fetch(`${apiUrl}/api/conversations`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
         if (!res.ok) throw new Error(data.message || "Error al cargar chats");
         setConversations(data.conversations || []);
       } catch (err) {
-        setError(err.message);
+        if (err?.nonJson) {
+          setError("Respuesta inesperada del servidor. Revisa que VITE_API_URL apunte al backend.");
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -331,10 +355,11 @@ const ChatDetailView = ({ token, user }) => {
         fetch(`${apiUrl}/api/conversations/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       
-      if (!convRes.ok || !msgRes.ok) throw new Error("Error al cargar la conversación");
-      
-      const convJson = await convRes.json();
-      const msgJson = await msgRes.json();
+      const convJson = await parseJsonResponse(convRes);
+      if (!convRes.ok) throw new Error(convJson?.message || "Error al cargar la conversación");
+
+      const msgJson = await parseJsonResponse(msgRes);
+      if (!msgRes.ok) throw new Error(msgJson?.message || "Error al cargar los mensajes");
       
       setConvData(convJson.conversation);
       setMessages(msgJson.messages || []);
@@ -391,13 +416,18 @@ const ChatDetailView = ({ token, user }) => {
         body: formData
       });
 
-      if (!res.ok) throw new Error("Error al enviar mensaje");
+      const data = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(data?.message || "Error al enviar mensaje");
       
       setText("");
       setImages([]);
       await fetchChat();
     } catch (err) {
-      alert(err.message);
+      if (err?.nonJson) {
+        alert("Respuesta inesperada del servidor. Revisa que VITE_API_URL apunte al backend.");
+      } else {
+        alert(err.message);
+      }
     } finally {
       setSending(false);
     }
