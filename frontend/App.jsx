@@ -355,6 +355,9 @@ const AddProductView = ({ token, onCreated }) => {
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
+  const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "";
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -366,22 +369,27 @@ const AddProductView = ({ token, onCreated }) => {
   };
 
   const uploadImageToCloudinary = async (file) => {
-    // We use a free preset for demo purposes. In production, use your own Cloudinary preset/cloud name.
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      throw new Error("Falta configurar Cloudinary (VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET)");
+    }
+
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "ml_default"); // public demo preset
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-    try {
-      const res = await fetch("https://api.cloudinary.com/v1_1/demo/image/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      return data.secure_url;
-    } catch (e) {
-      console.error("Cloudinary upload error", e);
-      return null;
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error?.message || "No se pudo subir la imagen");
     }
+    if (!data?.secure_url) {
+      throw new Error("No se pudo obtener la URL de la imagen");
+    }
+    return data.secure_url;
   };
 
   const handleCreate = async (e) => {
@@ -393,6 +401,9 @@ const AddProductView = ({ token, onCreated }) => {
       let uploadedUrl = "";
       if (imageFile) {
         uploadedUrl = await uploadImageToCloudinary(imageFile);
+      }
+      if (imageFile && !uploadedUrl) {
+        throw new Error("No se pudo subir la imagen");
       }
 
       const apiUrl = getApiUrl();
