@@ -1017,6 +1017,7 @@ function App() {
           </button>
 
           {origin ? <div className="muted" style={{ marginTop: "12px" }}>Origen: {origin}</div> : null}
+          <div className="muted">API: {getApiUrl()}</div>
           {googleClientId ? <div className="muted">Client ID: {googleClientId}</div> : null}
           {error ? <div className="error">{error}</div> : null}
         </div>
@@ -1028,7 +1029,10 @@ function App() {
     <div className="app-layout">
       <div className="main-content">
         <div className="top-status">
-          <div className="muted">{user?.email || ""}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div className="muted">{user?.email || ""}</div>
+            <div className="muted">API: {getApiUrl()}</div>
+          </div>
           <button className="icon-btn" type="button" onClick={() => refreshData(token, user)} disabled={loading}>
             <RefreshCcw size={18} />
           </button>
