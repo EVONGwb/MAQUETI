@@ -16,6 +16,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* Usa viewport dinámico para móviles */
   max-width: 100%;
   margin: 0 auto;
   background: #fff;
@@ -26,7 +27,7 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 70px; /* space for bottom nav on mobile */
+  padding-bottom: calc(75px + env(safe-area-inset-bottom)); /* Asegura espacio para menú + safe area iOS */
 }
 
 .view-container {
@@ -73,17 +74,17 @@ body {
 
 /* Bottom Navigation */
 .bottom-nav {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 65px;
+  height: calc(65px + env(safe-area-inset-bottom));
   background: white;
   border-top: 1px solid #eee;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 10px env(safe-area-inset-bottom) 10px;
   z-index: 100;
 }
 
