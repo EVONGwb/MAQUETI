@@ -80,88 +80,248 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading }) => {
+const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, toggleFavorite, favorites }) => {
   const navigate = useNavigate();
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
     if (!search) return byCategory;
     const q = search.toLowerCase();
-    return byCategory.filter((p) => String(p.title || "").toLowerCase().includes(q));
+    return byCategory.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.location || "").toLowerCase().includes(q));
   }, [products, search, activeCategory]);
 
+  const featuredProducts = useMemo(() => filtered.slice(0, 4), [filtered]); // For now, we just take the first 4 as featured
+  
+  // Custom categories mapping with icons
+  const categoriesData = useMemo(() => {
+    const iconMap = {
+      "Electrónica": "📱",
+      "Moda": "👕",
+      "Gaming": "🎮",
+      "Hogar": "🏠",
+      "Motor": "🚗",
+      "Deporte": "⚽",
+      "Belleza": "💄",
+      "Coleccionismo": "🧩",
+      "Otros": "📦"
+    };
+    return categories.map(c => ({ name: c, icon: iconMap[c] || "✨" }));
+  }, [categories]);
+
+  const storesData = [
+    { id: 1, name: "Tech Urban", tag: "Tecnología", rating: 4.9, products: 124, avatar: "TU" },
+    { id: 2, name: "Moda Street", tag: "Ropa urbana", rating: 4.8, products: 86, avatar: "MS" },
+    { id: 3, name: "Game Zone", tag: "Gaming", rating: 4.7, products: 59, avatar: "GZ" },
+  ];
+
   return (
-    <div className="home-page">
-      {/* HEADER */}
-      <header className="home-header">
-        <h1 className="home-logo">MAQUETI</h1>
-        <div className="home-header-icons">
-          <span onClick={() => navigate("/notifications")}>🔔</span>
-          <span onClick={() => navigate("/chats")}>💬</span>
+    <div className="mq-home">
+      <header className="mq-topbar">
+        <div className="mq-brand-wrap">
+          <div className="mq-brand-badge">M</div>
+          <div>
+            <p className="mq-brand-subtitle">Marketplace urbano</p>
+            <h1 className="mq-brand-title">MAQUETI</h1>
+          </div>
+        </div>
+
+        <div className="mq-top-actions">
+          <button className="mq-icon-btn" aria-label="Notificaciones" onClick={() => navigate("/notifications")}>🔔</button>
+          <button className="mq-icon-btn" aria-label="Mensajes" onClick={() => navigate("/chats")}>💬</button>
         </div>
       </header>
 
-      {/* SEARCH */}
-      <div className="home-search-container">
-        <input 
-          placeholder="¿Qué estás buscando?" 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <main className="mq-main">
+        <section className="mq-hero">
+          <div className="mq-hero-content">
+            <span className="mq-pill">Compra, vende y crea tu tienda</span>
+            <h2>Todo lo que buscas en un solo lugar</h2>
+            <p>Descubre productos, negocia por chat y gestiona tu tienda con una experiencia rápida y moderna.</p>
 
-      {/* CATEGORIES */}
-      <div className="home-categories">
-        <div 
-          className={`home-category ${activeCategory === "" ? "active" : ""}`}
-          onClick={() => setActiveCategory("")}
-        >
-          Todos
-        </div>
-        {categories.map((cat, index) => (
-          <div 
-            key={index} 
-            className={`home-category ${activeCategory === cat ? "active" : ""}`}
-            onClick={() => setActiveCategory(cat)}
-          >
-            {cat}
-          </div>
-        ))}
-      </div>
+            <div className="mq-search">
+              <span className="mq-search-icon">🔎</span>
+              <input
+                type="text"
+                placeholder="¿Qué estás buscando hoy?"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="mq-search-btn">Buscar</button>
+            </div>
 
-      {/* STORES */}
-      <div className="home-section">
-        <h2>🏪 Tiendas destacadas</h2>
-        <div className="home-stores">
-          <div className="home-store-card">Tech Store</div>
-          <div className="home-store-card">Moda Urban</div>
-          <div className="home-store-card">Gaming Zone</div>
-        </div>
-      </div>
-
-      {/* PRODUCTS */}
-      <div className="home-section">
-        <h2>🔥 Productos</h2>
-        {loading ? (
-          <div className="home-products">
-            {[1,2,3,4].map(n => <div key={n} className="skeleton skeleton-card" style={{height: '200px'}}></div>)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">No hay productos todavía.</div>
-        ) : (
-          <div className="home-products">
-            {filtered.slice(0, 12).map((p) => (
-              <div key={p.id} className="home-product-card" onClick={() => navigate(`/product/${p.id}`)}>
-                <img src={p.imageUrl ? `${getApiUrl()}${p.imageUrl}` : "https://via.placeholder.com/300"} alt={p.title} />
-                <div className="home-product-info">
-                  <h3>{p.title}</h3>
-                  <p className="home-price">{priceLabel(p.price)}</p>
-                  <p className="home-location">{p.location || "Online"}</p>
-                </div>
+            <div className="mq-hero-stats">
+              <div className="mq-stat-card">
+                <strong>{products.length}+</strong>
+                <span>Productos</span>
               </div>
+              <div className="mq-stat-card">
+                <strong>1.8K</strong>
+                <span>Tiendas</span>
+              </div>
+              <div className="mq-stat-card">
+                <strong>24/7</strong>
+                <span>Chat activo</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mq-hero-side">
+            <div className="mq-highlight-card mq-highlight-primary">
+              <span className="mq-highlight-label">Tendencia</span>
+              <h3>Electrónica premium</h3>
+              <p>Productos destacados con envío rápido y vendedores verificados.</p>
+            </div>
+
+            <div className="mq-highlight-card">
+              <span className="mq-highlight-label">Nuevo</span>
+              <h3>Tiendas con stock</h3>
+              <p>Controla catálogo, inventario y publicaciones desde una sola app.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mq-section">
+          <div className="mq-section-head">
+            <div>
+              <p className="mq-section-kicker">Explora</p>
+              <h3>Categorías populares</h3>
+            </div>
+          </div>
+
+          <div className="mq-categories-row">
+            <button
+              className={`mq-category-chip ${activeCategory === "" ? "active" : ""}`}
+              onClick={() => setActiveCategory("")}
+            >
+              <span>✨</span> Todas
+            </button>
+            {categoriesData.map((category) => (
+              <button
+                key={category.name}
+                className={`mq-category-chip ${activeCategory === category.name ? "active" : ""}`}
+                onClick={() => setActiveCategory(category.name)}
+              >
+                <span>{category.icon}</span>
+                {category.name}
+              </button>
             ))}
           </div>
+        </section>
+
+        <section className="mq-section">
+          <div className="mq-section-head">
+            <div>
+              <p className="mq-section-kicker">Destacado</p>
+              <h3>Tiendas recomendadas</h3>
+            </div>
+            <button className="mq-link-btn">Ver todas</button>
+          </div>
+
+          <div className="mq-stores-grid">
+            {storesData.map((store) => (
+              <article key={store.id} className="mq-store-card">
+                <div className="mq-store-top">
+                  <div className="mq-store-avatar">{store.avatar}</div>
+                  <div>
+                    <h4>{store.name}</h4>
+                    <p>{store.tag}</p>
+                  </div>
+                </div>
+
+                <div className="mq-store-meta">
+                  <span>⭐ {store.rating}</span>
+                  <span>{store.products} productos</span>
+                </div>
+
+                <button className="mq-store-btn">Visitar tienda</button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {!!featuredProducts.length && (
+          <section className="mq-section">
+            <div className="mq-section-head">
+              <div>
+                <p className="mq-section-kicker">Selección</p>
+                <h3>Productos destacados</h3>
+              </div>
+              <button className="mq-link-btn" onClick={() => navigate("/explore")}>Ver más</button>
+            </div>
+
+            <div className="mq-featured-row">
+              {featuredProducts.map((product) => (
+                <article key={product.id} className="mq-featured-card" onClick={() => navigate(`/product/${product.id}`)}>
+                  <img src={product.imageUrl ? `${getApiUrl()}${product.imageUrl}` : "https://via.placeholder.com/300"} alt={product.title} />
+                  <div className="mq-featured-overlay">
+                    <span className="mq-badge">{product.condition || "Nuevo"}</span>
+                    <button
+                      className={`mq-fav-btn ${favorites.includes(product.id) ? "active" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+                      aria-label="Guardar producto"
+                    >
+                      {favorites.includes(product.id) ? "❤" : "♡"}
+                    </button>
+                  </div>
+                  <div className="mq-featured-info">
+                    <p className="mq-product-category">{product.category || "Otros"}</p>
+                    <h4>{product.title}</h4>
+                    <strong>{priceLabel(product.price)}</strong>
+                    <span>{product.location || "Online"}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         )}
-      </div>
+
+        <section className="mq-section mq-last-section">
+          <div className="mq-section-head">
+            <div>
+              <p className="mq-section-kicker">Marketplace</p>
+              <h3>Productos para ti</h3>
+            </div>
+            <button className="mq-filter-btn" onClick={() => navigate("/explore")}>Filtros</button>
+          </div>
+
+          {loading ? (
+            <div className="mq-products-grid">
+              {[1, 2, 3, 4].map(n => <div key={n} className="skeleton skeleton-card" style={{height: '250px', borderRadius: '16px'}}></div>)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="mq-empty-state">
+              <h4>No encontramos productos</h4>
+              <p>Prueba con otra búsqueda o selecciona otra categoría.</p>
+            </div>
+          ) : (
+            <div className="mq-products-grid">
+              {filtered.map((product) => (
+                <article key={product.id} className="mq-product-card" onClick={() => navigate(`/product/${product.id}`)}>
+                  <div className="mq-product-image-wrap">
+                    <img src={product.imageUrl ? `${getApiUrl()}${product.imageUrl}` : "https://via.placeholder.com/300"} alt={product.title} />
+                    <span className="mq-badge">{product.condition || "Nuevo"}</span>
+                    <button
+                      className={`mq-fav-btn small ${favorites.includes(product.id) ? "active" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+                      aria-label="Guardar producto"
+                    >
+                      {favorites.includes(product.id) ? "❤" : "♡"}
+                    </button>
+                  </div>
+
+                  <div className="mq-product-info">
+                    <p className="mq-product-category">{product.category || "Otros"}</p>
+                    <h4>{product.title}</h4>
+                    <div className="mq-product-bottom">
+                      <strong>{priceLabel(product.price)}</strong>
+                      <span>{product.location || "Online"}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
 };
