@@ -8,7 +8,8 @@ connectDb()
       console.log(`${env.appName} backend running on port ${env.port}`);
     });
   })
-  .catch(() => {
+  .catch((err) => {
     console.error("No se pudo conectar a MongoDB");
+    console.error(err?.name || "Error", err?.message || String(err));
     process.exit(1);
   });
