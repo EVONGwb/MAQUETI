@@ -80,7 +80,7 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, toggleFavorite = () => {}, favorites = [] }) => {
+const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, toggleFavorite = () => {}, favorites = [] }) => {
   const navigate = useNavigate();
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
@@ -90,6 +90,13 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
   }, [products, search, activeCategory]);
 
   const featuredProducts = useMemo(() => filtered.slice(0, 4), [filtered]); // For now, we just take the first 4 as featured
+
+  const resolveImageSrc = (imageUrl) => {
+    if (!imageUrl) return "https://via.placeholder.com/300";
+    if (typeof imageUrl !== "string") return "https://via.placeholder.com/300";
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
+    return `${getApiUrl()}${imageUrl}`;
+  };
   
   // Custom categories mapping with icons
   const categoriesData = useMemo(() => {
@@ -251,7 +258,7 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
             <div className="mq-featured-row">
               {featuredProducts.map((product) => (
                 <article key={product.id} className="mq-featured-card" onClick={() => navigate(`/product/${product.id}`)}>
-                  <img src={product.imageUrl ? `${getApiUrl()}${product.imageUrl}` : "https://via.placeholder.com/300"} alt={product.title} />
+                  <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
                   <div className="mq-featured-overlay">
                     <span className="mq-badge">{product.condition || "Nuevo"}</span>
                     <button
@@ -287,6 +294,11 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
             <div className="mq-products-grid">
               {[1, 2, 3, 4].map(n => <div key={n} className="skeleton skeleton-card" style={{height: '250px', borderRadius: '16px'}}></div>)}
             </div>
+          ) : !loading && error && products.length === 0 ? (
+            <div className="mq-empty-state">
+              <h4>Error al cargar productos</h4>
+              <p>{error}</p>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="mq-empty-state">
               <h4>No encontramos productos</h4>
@@ -297,7 +309,7 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
               {filtered.map((product) => (
                 <article key={product.id} className="mq-product-card" onClick={() => navigate(`/product/${product.id}`)}>
                   <div className="mq-product-image-wrap">
-                    <img src={product.imageUrl ? `${getApiUrl()}${product.imageUrl}` : "https://via.placeholder.com/300"} alt={product.title} />
+                    <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
                     <span className="mq-badge">{product.condition || "Nuevo"}</span>
                     <button
                       className={`mq-fav-btn small ${favorites.includes(product.id) ? "active" : ""}`}
@@ -1240,7 +1252,7 @@ function App() {
           </div>
         </div>
         <Routes>
-          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} toggleFavorite={toggleFavorite} favorites={favorites} />} />
+          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
           <Route
             path="/add"
