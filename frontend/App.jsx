@@ -81,6 +81,7 @@ const ProductCard = ({ product }) => {
 };
 
 const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading }) => {
+  const navigate = useNavigate();
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
     if (!search) return byCategory;
@@ -89,47 +90,78 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
   }, [products, search, activeCategory]);
 
   return (
-    <div className="view-container">
-      <div className="search-bar">
-        <Search size={20} color="#666" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} type="text" placeholder="Buscar productos..." />
-      </div>
-      <div className="banner">
-        <h2>Ofertas de la semana</h2>
-        <p>Productos nuevos cada día</p>
+    <div className="home-page">
+      {/* HEADER */}
+      <header className="home-header">
+        <h1 className="home-logo">MAQUETI</h1>
+        <div className="home-header-icons">
+          <span onClick={() => navigate("/notifications")}>🔔</span>
+          <span onClick={() => navigate("/chats")}>💬</span>
+        </div>
+      </header>
+
+      {/* SEARCH */}
+      <div className="home-search-container">
+        <input 
+          placeholder="¿Qué estás buscando?" 
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
-      <h3>Categorías</h3>
-      <div className="categories">
-        <button className={`cat-chip ${activeCategory ? "" : "active"}`} type="button" onClick={() => setActiveCategory("")}>
+      {/* CATEGORIES */}
+      <div className="home-categories">
+        <div 
+          className={`home-category ${activeCategory === "" ? "active" : ""}`}
+          onClick={() => setActiveCategory("")}
+        >
           Todos
-        </button>
-        {categories.map((c) => (
-          <button
-            key={c}
-            className={`cat-chip ${activeCategory === c ? "active" : ""}`}
-            type="button"
-            onClick={() => setActiveCategory(c)}
+        </div>
+        {categories.map((cat, index) => (
+          <div 
+            key={index} 
+            className={`home-category ${activeCategory === cat ? "active" : ""}`}
+            onClick={() => setActiveCategory(cat)}
           >
-            {c}
-          </button>
+            {cat}
+          </div>
         ))}
       </div>
 
-      <h3>Cerca de ti</h3>
-      {loading ? (
-        <div className="product-grid">
-          {[1,2,3,4].map(n => <div key={n} className="skeleton skeleton-card"></div>)}
+      {/* STORES */}
+      <div className="home-section">
+        <h2>🏪 Tiendas destacadas</h2>
+        <div className="home-stores">
+          <div className="home-store-card">Tech Store</div>
+          <div className="home-store-card">Moda Urban</div>
+          <div className="home-store-card">Gaming Zone</div>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">No hay productos todavía.</div>
-      ) : (
-        <div className="product-grid">
-          {filtered.slice(0, 12).map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      )}
+      </div>
+
+      {/* PRODUCTS */}
+      <div className="home-section">
+        <h2>🔥 Productos</h2>
+        {loading ? (
+          <div className="home-products">
+            {[1,2,3,4].map(n => <div key={n} className="skeleton skeleton-card" style={{height: '200px'}}></div>)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">No hay productos todavía.</div>
+        ) : (
+          <div className="home-products">
+            {filtered.slice(0, 12).map((p) => (
+              <div key={p.id} className="home-product-card" onClick={() => navigate(`/product/${p.id}`)}>
+                <img src={p.imageUrl ? `${getApiUrl()}${p.imageUrl}` : "https://via.placeholder.com/300"} alt={p.title} />
+                <div className="home-product-info">
+                  <h3>{p.title}</h3>
+                  <p className="home-price">{priceLabel(p.price)}</p>
+                  <p className="home-location">{p.location || "Online"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
