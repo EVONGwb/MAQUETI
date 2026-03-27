@@ -1,4 +1,3 @@
-const db = require("../config/db");
 const jwt = require("jsonwebtoken");
 const {
   generateRegistrationOptions,
@@ -6,6 +5,8 @@ const {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } = require("@simplewebauthn/server");
+const User = require("../models/user.model");
+const Passkey = require("../models/passkey.model");
 
 const SECRET = process.env.JWT_SECRET || "maqueti_secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
@@ -34,41 +35,27 @@ const fromBase64url = (value) => {
   return Buffer.from(base64, "base64");
 };
 
-const getUserById = (id) =>
-  new Promise((resolve, reject) => {
-    db.get("SELECT id, name, email FROM users WHERE id = ?", [id], (err, row) => {
-      if (err) return reject(err);
-      resolve(row);
-    });
-  });
+const getUserById = (id) => User.findOne({ id: Number(id) }, { id: 1, name: 1, email: 1, _id: 0 }).lean();
 
-const getPasskeysByUserId = (userId) =>
-  new Promise((resolve, reject) => {
-    db.all("SELECT * FROM passkeys WHERE userId = ?", [userId], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows || []);
-    });
-  });
+const getPasskeysByUserId = (userId) => Passkey.find({ userId: Number(userId) }, { _id: 0 }).lean();
 
 const getPasskeyByCredentialId = (credentialId) =>
-  new Promise((resolve, reject) => {
-    db.get("SELECT * FROM passkeys WHERE credentialId = ?", [credentialId], (err, row) => {
-      if (err) return reject(err);
-      resolve(row);
-    });
-  });
+  Passkey.findOne({ credentialId: String(credentialId) }, { _id: 0 }).lean();
 
-const upsertPasskey = (passkey) =>
-  new Promise((resolve, reject) => {
-    db.run(
-      "INSERT INTO passkeys (credentialId, userId, publicKey, counter, transports) VALUES (?, ?, ?, ?, ?) ON CONFLICT(credentialId) DO UPDATE SET counter = excluded.counter, transports = excluded.transports",
-      [passkey.credentialId, passkey.userId, passkey.publicKey, passkey.counter, passkey.transports],
-      function (err) {
-        if (err) return reject(err);
-        resolve();
-      }
-    );
-  });
+const upsertPasskey = async (passkey) => {
+  await Passkey.updateOne(
+    { credentialId: passkey.credentialId },
+    {
+      $set: {
+        userId: Number(passkey.userId),
+        publicKey: passkey.publicKey,
+        counter: passkey.counter,
+        transports: passkey.transports || null,
+      },
+    },
+    { upsert: true }
+  );
+};
 
 const registrationOptions = async (req, res) => {
   try {
@@ -151,13 +138,7 @@ const registrationVerify = async (req, res) => {
   }
 };
 
-const getAllPasskeys = () =>
-  new Promise((resolve, reject) => {
-    db.all("SELECT * FROM passkeys", [], (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows || []);
-    });
-  });
+const getAllPasskeys = () => Passkey.find({}, { _id: 0 }).lean();
 
 const loginOptions = async (req, res) => {
   try {

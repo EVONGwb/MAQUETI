@@ -1,28 +1,6 @@
-const db = require("../config/db");
+const Product = require("../models/product.model");
 
-const dbAll = (sql, params) =>
-  new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows || []);
-    });
-  });
-
-const dbGet = (sql, params) =>
-  new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) return reject(err);
-      resolve(row || null);
-    });
-  });
-
-const dbRun = (sql, params) =>
-  new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) return reject(err);
-      resolve(this);
-    });
-  });
+const generateNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
 const getProducts = async (req, res) => {
   try {
@@ -38,11 +16,9 @@ const getProducts = async (req, res) => {
       }
     }
 
-    const rows = userId
-      ? await dbAll("SELECT * FROM products WHERE userId = ? ORDER BY createdAt DESC", [userId])
-      : await dbAll("SELECT * FROM products ORDER BY createdAt DESC", []);
-
-    return res.json({ total: rows.length, products: rows });
+    const query = userId ? { userId: Number(userId) } : {};
+    const products = await Product.find(query, { _id: 0 }).sort({ createdAt: -1 }).lean();
+    return res.json({ total: products.length, products });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener productos" });
   }
@@ -51,13 +27,13 @@ const getProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const row = await dbGet("SELECT * FROM products WHERE id = ?", [id]);
+    const product = await Product.findOne({ id: Number(id) }, { _id: 0 }).lean();
 
-    if (!row) {
+    if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    return res.json({ product: row });
+    return res.json({ product });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener producto" });
   }
@@ -76,15 +52,24 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Title y price son obligatorios" });
     }
 
-    const id = Date.now();
+    const id = generateNumericId();
     const createdAt = Date.now();
     const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock);
     const finalImageUrl = imageUrl || "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
-
-    await dbRun(
-      "INSERT INTO products (id, title, price, userId, description, condition, category, location, imageUrl, stock, sku, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, title, price, userId, description || null, condition || "Como nuevo", category || "Otros", location || null, finalImageUrl, safeStock, sku || null, createdAt]
-    );
+    await Product.create({
+      id,
+      title,
+      price: Number(price),
+      userId: Number(userId),
+      description: description || null,
+      condition: condition || "Como nuevo",
+      category: category || "Otros",
+      location: location || null,
+      imageUrl: finalImageUrl,
+      stock: safeStock,
+      sku: sku || null,
+      createdAt,
+    });
 
     return res.status(201).json({
       message: "Producto creado correctamente",
@@ -97,7 +82,7 @@ const createProduct = async (req, res) => {
         condition: condition || "Como nuevo",
         category: category || "Otros",
         location: location || null,
-        imageUrl: imageUrl || null,
+        imageUrl: finalImageUrl,
         stock: safeStock,
         sku: sku || null,
         createdAt,
@@ -118,7 +103,7 @@ const updateProduct = async (req, res) => {
       return res.status(401).json({ message: "Token requerido" });
     }
 
-    const row = await dbGet("SELECT * FROM products WHERE id = ?", [id]);
+    const row = await Product.findOne({ id: Number(id) }, { _id: 0 }).lean();
     if (!row) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
@@ -137,9 +122,21 @@ const updateProduct = async (req, res) => {
     const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock;
     const updatedSku = sku !== undefined ? sku : row.sku;
 
-    await dbRun(
-      "UPDATE products SET title = ?, price = ?, description = ?, condition = ?, category = ?, location = ?, imageUrl = ?, stock = ?, sku = ? WHERE id = ?",
-      [updatedTitle, updatedPrice, updatedDescription, updatedCondition, updatedCategory, updatedLocation, updatedImageUrl, updatedStock, updatedSku, id]
+    await Product.updateOne(
+      { id: Number(id) },
+      {
+        $set: {
+          title: updatedTitle,
+          price: updatedPrice,
+          description: updatedDescription,
+          condition: updatedCondition,
+          category: updatedCategory,
+          location: updatedLocation,
+          imageUrl: updatedImageUrl,
+          stock: updatedStock,
+          sku: updatedSku,
+        },
+      }
     );
 
     return res.json({
@@ -173,7 +170,7 @@ const deleteProduct = async (req, res) => {
       return res.status(401).json({ message: "Token requerido" });
     }
 
-    const row = await dbGet("SELECT * FROM products WHERE id = ?", [id]);
+    const row = await Product.findOne({ id: Number(id) }, { _id: 0 }).lean();
     if (!row) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
@@ -182,7 +179,7 @@ const deleteProduct = async (req, res) => {
       return res.status(403).json({ message: "No autorizado" });
     }
 
-    await dbRun("DELETE FROM products WHERE id = ?", [id]);
+    await Product.deleteOne({ id: Number(id) });
 
     return res.json({ message: "Producto eliminado correctamente", product: row });
   } catch (error) {
