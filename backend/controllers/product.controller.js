@@ -29,12 +29,13 @@ const getProducts = async (req, res) => {
     const { userId } = req.query;
     const requesterId = req.user?.id;
 
-    if (!requesterId) {
-      return res.status(401).json({ message: "Token requerido" });
-    }
-
-    if (userId && String(userId) !== String(requesterId)) {
-      return res.status(403).json({ message: "No autorizado" });
+    if (userId) {
+      if (!requesterId) {
+        return res.status(401).json({ message: "Token requerido" });
+      }
+      if (String(userId) !== String(requesterId)) {
+        return res.status(403).json({ message: "No autorizado" });
+      }
     }
 
     const rows = userId

@@ -24,4 +24,23 @@ const authMiddleware = (req, res, next) => {
   } 
 }; 
 
-module.exports = authMiddleware; 
+const optionalAuthMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return next();
+
+  const token = authHeader.split(" ")[1];
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
+    return next();
+  } catch (error) {
+    return res.status(401).json({
+      message: "Token inválido",
+    });
+  }
+};
+
+module.exports = authMiddleware;
+module.exports.optionalAuthMiddleware = optionalAuthMiddleware;

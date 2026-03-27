@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { Home, Search, PlusSquare, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
+import { Home, Search, PlusSquare, User, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
 
 const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
@@ -46,6 +46,18 @@ const isJwtExpired = (token) => {
 const priceLabel = (value) => {
   if (value === undefined || value === null || Number.isNaN(Number(value))) return "—";
   return `${Number(value)} €`;
+};
+
+const AuthRequiredView = ({ title, message, onLogin }) => {
+  return (
+    <div className="view-container">
+      <h2>{title}</h2>
+      <div className="empty-state">{message}</div>
+      <button className="primary-btn" type="button" style={{ marginTop: "14px" }} onClick={onLogin}>
+        Regístrate o inicia sesión
+      </button>
+    </div>
+  );
 };
 
 const ProductCard = ({ product }) => {
@@ -178,7 +190,7 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
   );
 };
 
-const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
+const ProductDetailView = ({ products, toggleFavorite, favorites, onRequireAuth }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const product = products.find((p) => String(p.id) === String(id));
@@ -200,7 +212,10 @@ const ProductDetailView = ({ products, toggleFavorite, favorites }) => {
     try {
       const apiUrl = getApiUrl();
       const token = localStorage.getItem("token") || "";
-      if (!token) throw new Error("Debes iniciar sesión para contactar al vendedor");
+      if (!token) {
+        onRequireAuth?.();
+        return;
+      }
 
       const res = await fetch(`${apiUrl}/api/conversations`, {
         method: "POST",
@@ -816,6 +831,8 @@ function App() {
   const [myProducts, setMyProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
+  const [authReason, setAuthReason] = useState("");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [passkeyMessage, setPasskeyMessage] = useState("");
@@ -842,9 +859,20 @@ function App() {
     return Array.from(set).slice(0, 12);
   }, [products]);
 
-  const fetchAllProducts = async (tkn) => {
+  const openAuth = (reason) => {
+    setAuthReason(reason || "");
+    setShowAuth(true);
+  };
+
+  const closeAuth = () => {
+    setShowAuth(false);
+    setAuthReason("");
+    setError("");
+  };
+
+  const fetchAllProducts = async () => {
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/products`, { headers: { Authorization: `Bearer ${tkn}` } });
+    const res = await fetch(`${apiUrl}/api/products`);
     const data = await res.json();
     if (!res.ok) throw new Error(data?.message || "Error al obtener productos");
     return data.products || [];
@@ -862,9 +890,9 @@ function App() {
     setLoading(true);
     setError("");
     try {
-      const all = await fetchAllProducts(tkn);
+      const all = await fetchAllProducts();
       setProducts(all);
-      if (usr?.id) {
+      if (tkn && usr?.id) {
         const mine = await fetchMyProducts(tkn, usr.id);
         setMyProducts(mine);
       } else {
@@ -900,6 +928,7 @@ function App() {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userId");
     localStorage.removeItem("userName");
+    refreshData("", null);
   }, []);
 
   const onAuthSuccess = async (data) => {
@@ -912,6 +941,7 @@ function App() {
     setUser(data.user);
     setIsLogged(true);
     await refreshData(data.token, data.user);
+    closeAuth();
     navigate("/");
   };
 
@@ -989,74 +1019,78 @@ function App() {
     setIsLogged(false);
     setToken("");
     setUser(null);
-    setProducts([]);
     setMyProducts([]);
     setError("");
     setPasskeyMessage("");
+    refreshData("", null);
     navigate("/");
   };
 
   const activePath = location.pathname;
-
-  if (!isLogged) {
-    const googleClientId = typeof window !== "undefined" ? window.__MAQUETI_GOOGLE_CLIENT_ID : "";
-    const origin = typeof window !== "undefined" ? window.__MAQUETI_ORIGIN : "";
-
-    return (
-      <div className="login-screen">
-        <div className="login-card">
-          <h1>MAQUETI</h1>
-          <p>Tu marketplace inteligente</p>
-
-          <div className="google-btn-wrapper">
-            <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Error al iniciar sesión")} />
-          </div>
-
-          <button className="secondary-btn full" type="button" onClick={handlePasskeyLogin}>
-            <Fingerprint size={18} /> Entrar con huella
-          </button>
-
-          {origin ? <div className="muted" style={{ marginTop: "12px" }}>Origen: {origin}</div> : null}
-          <div className="muted">API: {getApiUrl()}</div>
-          {googleClientId ? <div className="muted">Client ID: {googleClientId}</div> : null}
-          {error ? <div className="error">{error}</div> : null}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="app-layout">
       <div className="main-content">
         <div className="top-status">
           <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <div className="muted">{user?.email || ""}</div>
+            <div className="muted">{isLogged ? (user?.email || "") : "Invitado"}</div>
             <div className="muted">API: {getApiUrl()}</div>
           </div>
-          <button className="icon-btn" type="button" onClick={() => refreshData(token, user)} disabled={loading}>
-            <RefreshCcw size={18} />
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {!isLogged ? (
+              <button className="icon-btn" type="button" onClick={() => openAuth("Regístrate o inicia sesión para chatear y publicar.")}>
+                <User size={18} />
+              </button>
+            ) : null}
+            <button className="icon-btn" type="button" onClick={() => refreshData(token, user)} disabled={loading}>
+              <RefreshCcw size={18} />
+            </button>
+          </div>
         </div>
         <Routes>
           <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
-          <Route path="/add" element={<AddProductView token={token} onCreated={() => refreshData(token, user)} />} />
-          <Route path="/inventory" element={<InventoryView myProducts={myProducts} />} />
+          <Route
+            path="/add"
+            element={
+              isLogged ? <AddProductView token={token} onCreated={() => refreshData(token, user)} /> : <AuthRequiredView title="Subir Producto" message="Regístrate o inicia sesión para publicar productos." onLogin={() => openAuth("Regístrate o inicia sesión para publicar productos.")} />
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              isLogged ? <InventoryView myProducts={myProducts} /> : <AuthRequiredView title="Inventario" message="Regístrate o inicia sesión para ver tu inventario." onLogin={() => openAuth("Regístrate o inicia sesión para ver tu inventario.")} />
+            }
+          />
           <Route
             path="/store"
             element={
-              <StoreView
-                user={user}
-                myProducts={myProducts}
-                onLogout={handleLogout}
-                onRegisterPasskey={handleRegisterPasskey}
-                passkeyMessage={passkeyMessage}
-              />
+              isLogged ? (
+                <StoreView
+                  user={user}
+                  myProducts={myProducts}
+                  onLogout={handleLogout}
+                  onRegisterPasskey={handleRegisterPasskey}
+                  passkeyMessage={passkeyMessage}
+                />
+              ) : (
+                <AuthRequiredView title="Mi Tienda" message="Regístrate o inicia sesión para acceder a tu tienda." onLogin={() => openAuth("Regístrate o inicia sesión para acceder a tu tienda.")} />
+              )
             }
           />
-          <Route path="/product/:id" element={<ProductDetailView products={products} toggleFavorite={toggleFavorite} favorites={favorites} />} />
-          <Route path="/chats" element={<ChatListView token={token} user={user} />} />
-          <Route path="/chats/:id" element={<ChatDetailView token={token} user={user} />} />
+          <Route path="/product/:id" element={<ProductDetailView products={products} toggleFavorite={toggleFavorite} favorites={favorites} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
+          <Route
+            path="/chats"
+            element={
+              isLogged ? <ChatListView token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para ver tus chats." onLogin={() => openAuth("Regístrate o inicia sesión para ver tus chats.")} />
+            }
+          />
+          <Route
+            path="/chats/:id"
+            element={
+              isLogged ? <ChatDetailView token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para abrir este chat." onLogin={() => openAuth("Regístrate o inicia sesión para abrir este chat.")} />
+            }
+          />
           <Route path="/favorites" element={<FavoritesView products={products} favorites={favorites} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -1071,12 +1105,12 @@ function App() {
           <Search size={24} />
           <span>Explorar</span>
         </div>
-        <div className="nav-item add-btn" onClick={() => navigate("/add")}>
+        <div className="nav-item add-btn" onClick={() => (isLogged ? navigate("/add") : openAuth("Regístrate o inicia sesión para publicar productos."))}>
           <div className="add-circle">
             <PlusSquare size={24} color="white" />
           </div>
         </div>
-        <div className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} onClick={() => navigate("/chats")}>
+        <div className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} onClick={() => (isLogged ? navigate("/chats") : openAuth("Regístrate o inicia sesión para chatear."))}>
           <MessageCircle size={24} />
           <span>Buzón</span>
         </div>
@@ -1084,11 +1118,34 @@ function App() {
           <Heart size={24} />
           <span>Favoritos</span>
         </div>
-        <div className={`nav-item ${activePath === "/store" ? "active" : ""}`} onClick={() => navigate("/store")}>
+        <div className={`nav-item ${activePath === "/store" ? "active" : ""}`} onClick={() => (isLogged ? navigate("/store") : openAuth("Regístrate o inicia sesión para acceder a tu tienda."))}>
           <StoreIcon size={24} />
           <span>Tienda</span>
         </div>
       </nav>
+      {showAuth ? (
+        <div className="login-screen" onClick={closeAuth}>
+          <div className="login-card" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button className="icon-btn" type="button" onClick={closeAuth}>
+                <X size={18} />
+              </button>
+            </div>
+            <h1>MAQUETI</h1>
+            <p>Tu marketplace inteligente</p>
+            {authReason ? <div className="error">{authReason}</div> : null}
+            <div className="google-btn-wrapper">
+              <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Error al iniciar sesión")} />
+            </div>
+            <button className="secondary-btn full" type="button" onClick={handlePasskeyLogin}>
+              <Fingerprint size={18} /> Entrar con huella
+            </button>
+            <div className="muted" style={{ marginTop: "12px" }}>Origen: {typeof window !== "undefined" ? window.location.origin : ""}</div>
+            <div className="muted">API: {getApiUrl()}</div>
+            {error ? <div className="error">{error}</div> : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

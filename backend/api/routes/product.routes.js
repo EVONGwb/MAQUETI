@@ -10,8 +10,8 @@ const {
   deleteProduct, 
 } = require("../../controllers/product.controller"); 
  
-router.get("/products", authMiddleware, getProducts); 
-router.get("/products/:id", authMiddleware, getProductById); 
+router.get("/products", authMiddleware.optionalAuthMiddleware, getProducts); 
+router.get("/products/:id", getProductById); 
 router.post("/products", authMiddleware, createProduct); 
 router.put("/products/:id", authMiddleware, updateProduct); 
 router.delete("/products/:id", authMiddleware, deleteProduct); 
