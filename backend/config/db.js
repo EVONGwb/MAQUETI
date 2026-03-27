@@ -1,20 +1,14 @@
 const mongoose = require("mongoose");
 
-const getMongoUri = () => {
-  const uri = (process.env.MONGODB_URI || "").trim();
-  if (uri) return uri;
-  if (process.env.NODE_ENV === "production") return "";
-  return "mongodb://127.0.0.1:27017/maqueti";
-};
-
-const connectDb = async () => {
-  if (mongoose.connection.readyState === 1) return mongoose.connection;
-  const uri = getMongoUri();
-  if (!uri) {
-    throw new Error("MONGODB_URI no configurado");
+async function connectDB() {
+  try {
+    const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/maqueti";
+    await mongoose.connect(uri);
+    console.log("MongoDB conectado");
+  } catch (error) {
+    console.error("No se pudo conectar a MongoDB:", error.message);
+    process.exit(1);
   }
-  await mongoose.connect(uri);
-  return mongoose.connection;
-};
+}
 
-module.exports = { connectDb };
+module.exports = { connectDB };
