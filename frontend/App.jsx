@@ -80,7 +80,7 @@ const ProductCard = ({ product }) => {
   );
 };
 
-const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, toggleFavorite, favorites }) => {
+const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, toggleFavorite = () => {}, favorites = [] }) => {
   const navigate = useNavigate();
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
@@ -1240,7 +1240,7 @@ function App() {
           </div>
         </div>
         <Routes>
-          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} />} />
+          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} toggleFavorite={toggleFavorite} favorites={favorites} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
           <Route
             path="/add"
