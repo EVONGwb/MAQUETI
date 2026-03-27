@@ -3,28 +3,12 @@ import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "re
 import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { Home, Search, PlusSquare, User, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
-
-const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") return "http://localhost:3005";
-  return "https://maqueti.onrender.com";
-};
-
-const parseJsonResponse = async (res) => {
-  const ct = (res.headers.get("content-type") || "").toLowerCase();
-  if (ct.includes("application/json")) {
-    try {
-      return await res.json();
-    } catch {
-      return null;
-    }
-  }
-  const bodyText = await res.text();
-  const err = new Error(`Respuesta inesperada del servidor (HTTP ${res.status})`);
-  err.nonJson = true;
-  err.bodyText = bodyText;
-  throw err;
-};
+import HomePage from "./src/pages/Home";
+import ProductDetailPage from "./src/pages/ProductDetail";
+import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
+import BottomNav from "./src/components/BottomNav";
+import { getApiUrl, parseJsonResponse } from "./src/services/api";
+import { priceLabel } from "./src/services/format";
 
 const decodeJwtPayload = (token) => {
   try {
@@ -41,11 +25,6 @@ const isJwtExpired = (token) => {
   const payload = decodeJwtPayload(token);
   if (!payload || !payload.exp) return false;
   return Date.now() >= payload.exp * 1000;
-};
-
-const priceLabel = (value) => {
-  if (value === undefined || value === null || Number.isNaN(Number(value))) return "—";
-  return `${Number(value)} €`;
 };
 
 const AuthRequiredView = ({ title, message, onLogin }) => {
@@ -1252,7 +1231,7 @@ function App() {
           </div>
         </div>
         <Routes>
-          <Route path="/" element={<HomeView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} />} />
+          <Route path="/" element={<HomePage products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
           <Route
             path="/add"
@@ -1282,17 +1261,17 @@ function App() {
               )
             }
           />
-          <Route path="/product/:id" element={<ProductDetailView products={products} toggleFavorite={toggleFavorite} favorites={favorites} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
+          <Route path="/product/:id" element={<ProductDetailPage products={products} toggleFavorite={toggleFavorite} favorites={favorites} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route
             path="/chats"
             element={
-              isLogged ? <ChatListView token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para ver tus chats." onLogin={() => openAuth("Regístrate o inicia sesión para ver tus chats.")} />
+              isLogged ? <ChatListPage token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para ver tus chats." onLogin={() => openAuth("Regístrate o inicia sesión para ver tus chats.")} />
             }
           />
           <Route
             path="/chats/:id"
             element={
-              isLogged ? <ChatDetailView token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para abrir este chat." onLogin={() => openAuth("Regístrate o inicia sesión para abrir este chat.")} />
+              isLogged ? <ChatDetailPage token={token} user={user} /> : <AuthRequiredView title="Mensajes" message="Regístrate o inicia sesión para abrir este chat." onLogin={() => openAuth("Regístrate o inicia sesión para abrir este chat.")} />
             }
           />
           <Route path="/favorites" element={<FavoritesView products={products} favorites={favorites} />} />
@@ -1300,33 +1279,7 @@ function App() {
         </Routes>
       </div>
 
-      <nav className="bottom-nav">
-        <div className={`nav-item ${activePath === "/" ? "active" : ""}`} onClick={() => navigate("/")}>
-          <Home size={24} />
-          <span>Inicio</span>
-        </div>
-        <div className={`nav-item ${activePath === "/explore" ? "active" : ""}`} onClick={() => navigate("/explore")}>
-          <Search size={24} />
-          <span>Explorar</span>
-        </div>
-        <div className="nav-item add-btn" onClick={() => (isLogged ? navigate("/add") : openAuth("Regístrate o inicia sesión para publicar productos."))}>
-          <div className="add-circle">
-            <PlusSquare size={24} color="white" />
-          </div>
-        </div>
-        <div className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} onClick={() => (isLogged ? navigate("/chats") : openAuth("Regístrate o inicia sesión para chatear."))}>
-          <MessageCircle size={24} />
-          <span>Buzón</span>
-        </div>
-        <div className={`nav-item ${activePath === "/favorites" ? "active" : ""}`} onClick={() => navigate("/favorites")}>
-          <Heart size={24} />
-          <span>Favoritos</span>
-        </div>
-        <div className={`nav-item ${activePath === "/store" ? "active" : ""}`} onClick={() => (isLogged ? navigate("/store") : openAuth("Regístrate o inicia sesión para acceder a tu tienda."))}>
-          <StoreIcon size={24} />
-          <span>Tienda</span>
-        </div>
-      </nav>
+      <BottomNav isLogged={isLogged} openAuth={openAuth} />
       {showAuth ? (
         <div className="login-screen" onClick={closeAuth}>
           <div className="login-card" onClick={(e) => e.stopPropagation()}>
