@@ -1642,53 +1642,54 @@ h3 {
 .pd-page {
   min-height: 100vh;
   background: #f4f7fb;
-  padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  padding-bottom: 100px;
 }
 
 .pd-topbar {
   position: sticky;
   top: 0;
   z-index: 20;
+  background: rgba(244, 247, 251, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px;
-  backdrop-filter: blur(12px);
-  background: rgba(244, 247, 251, 0.88);
-  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  padding: 16px;
 }
 
 .pd-topbar h1 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 18px;
+}
+
+.pd-back-btn,
+.pd-buy-btn,
+.pd-chat-btn {
+  border: none;
+  text-decoration: none;
 }
 
 .pd-back-btn {
+  background: white;
   padding: 10px 12px;
   border-radius: 14px;
-  background: white;
-  color: #111827;
-  font-weight: 800;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  padding: 10px 14px;
+  font-weight: 700;
 }
 
 .pd-spacer {
-  width: 60px;
+  width: 70px;
 }
 
 .pd-main {
-  width: 100%;
-  max-width: 1320px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 18px 16px 0;
+  padding: 20px 16px 0;
 }
 
 .pd-state-card {
-  background: white;
-  border-radius: 24px;
-  padding: 22px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  padding: 24px;
 }
 
 .pd-state-card h3 {
@@ -1697,117 +1698,107 @@ h3 {
 
 .pd-state-card p {
   margin: 0;
-  color: #6b7280;
 }
 
 .pd-grid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 18px;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
 }
 
 .pd-gallery-card,
 .pd-info-card {
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-  overflow: hidden;
 }
 
 .pd-gallery-card {
-  padding: 0;
+  overflow: hidden;
 }
 
 .pd-main-image {
   width: 100%;
-  height: 520px;
+  height: 560px;
   object-fit: cover;
   display: block;
 }
 
 .pd-info-card {
-  padding: 22px;
+  padding: 24px;
 }
 
 .pd-category {
-  margin: 0 0 6px 0;
+  margin: 0 0 8px;
   color: #2563eb;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .pd-info-card h2 {
-  margin: 0 0 10px 0;
-  font-size: 26px;
-  line-height: 1.2;
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.1;
 }
 
 .pd-price {
-  font-size: 28px;
-  font-weight: 900;
-  color: #111827;
-  margin-bottom: 12px;
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 14px;
 }
 
 .pd-meta {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  color: #4b5563;
+  margin-bottom: 18px;
 }
 
 .pd-description {
+  line-height: 1.7;
   color: #374151;
-  line-height: 1.6;
-  margin: 0 0 16px 0;
 }
 
 .pd-seller-box {
+  margin-top: 20px;
   background: #f8fafc;
-  border: 1px solid #eef2f7;
   border-radius: 18px;
   padding: 16px;
-  margin-bottom: 16px;
 }
 
 .pd-seller-box h4 {
-  margin: 0 0 6px 0;
-  font-size: 14px;
+  margin: 0 0 6px;
 }
 
 .pd-seller-box p {
   margin: 0;
-  color: #6b7280;
+  color: #4b5563;
 }
 
 .pd-actions {
   display: flex;
   gap: 12px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+  margin-top: 22px;
 }
 
 .pd-chat-btn {
   flex: 1;
-  padding: 14px 16px;
   border-radius: 16px;
+  padding: 14px 18px;
+  font-weight: 800;
+  text-align: center;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
-  font-weight: 900;
 }
 
 .pd-buy-btn {
   flex: 1;
-  padding: 14px 16px;
   border-radius: 16px;
-  background: #111827;
-  color: white;
-  font-weight: 900;
-  opacity: 0.65;
+  padding: 14px 18px;
+  font-weight: 800;
+  text-align: center;
+  background: #e5e7eb;
+  color: #111827;
+  opacity: 1;
 }
 
 .pd-fav-btn {
@@ -1824,13 +1815,17 @@ h3 {
   color: #ef4444;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
   .pd-grid {
     grid-template-columns: 1fr;
   }
 
   .pd-main-image {
-    height: 360px;
+    height: 320px;
+  }
+
+  .pd-actions {
+    flex-direction: column;
   }
 }
 
