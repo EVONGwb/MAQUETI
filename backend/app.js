@@ -30,11 +30,10 @@ app.use("/api/conversations", conversationRoutes);
 const frontendDistPath = path.join(__dirname, "../frontend/dist");
 app.use(express.static(frontendDistPath));
 app.get(/^\/(?!api|uploads).*/, (req, res) => {
-  try {
-    return res.sendFile(path.join(frontendDistPath, "index.html"));
-  } catch {
-    return res.status(500).send("Error");
-  }
+  return res.sendFile(path.join(frontendDistPath, "index.html"), (err) => {
+    if (err) return res.status(404).send("Frontend no construido");
+    return undefined;
+  });
 });
 
 module.exports = app;
