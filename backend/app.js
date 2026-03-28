@@ -23,4 +23,14 @@ app.use("/api", userRoutes);
 app.use("/api", productRoutes); 
 app.use("/api/conversations", conversationRoutes);
 
+const frontendDistPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendDistPath));
+app.get(/^\/(?!api|uploads).*/, (req, res) => {
+  try {
+    return res.sendFile(path.join(frontendDistPath, "index.html"));
+  } catch {
+    return res.status(500).send("Error");
+  }
+});
+
 module.exports = app;

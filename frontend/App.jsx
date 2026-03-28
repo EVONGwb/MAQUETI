@@ -8,6 +8,7 @@ import HomeUnicornReal from "./src/pages/HomeUnicornReal";
 import ProductDetailPage from "./src/pages/ProductDetail";
 import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
+import AuthPrompt from "./src/components/AuthPrompt";
 import { getApiUrl, parseJsonResponse } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
@@ -1266,27 +1267,16 @@ function App() {
       </div>
 
       <BottomNav isLogged={isLogged} openAuth={openAuth} />
-      {showAuth ? (
-        <div className="login-screen" onClick={closeAuth}>
-          <div className="login-card" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="icon-btn" type="button" onClick={closeAuth}>
-                <X size={18} />
-              </button>
-            </div>
-            <h1>MAQUETI</h1>
-            <p>Tu marketplace inteligente</p>
-            {authReason ? <div className="error">{authReason}</div> : null}
-            <div className="google-btn-wrapper">
-              <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError("Error al iniciar sesión")} />
-            </div>
-            <button className="secondary-btn full" type="button" onClick={handlePasskeyLogin}>
-              <Fingerprint size={18} /> Entrar con huella
-            </button>
-            {error ? <div className="error">{error}</div> : null}
-          </div>
-        </div>
-      ) : null}
+      <AuthPrompt
+        open={showAuth}
+        title="Necesitas una cuenta"
+        message={authReason || "Regístrate para chatear, guardar favoritos y comprar"}
+        error={error}
+        onClose={closeAuth}
+        onGoogleSuccess={handleGoogleSuccess}
+        onGoogleError={() => setError("Error al iniciar sesión")}
+        onPasskey={handlePasskeyLogin}
+      />
     </div>
   );
 }
