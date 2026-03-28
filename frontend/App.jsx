@@ -4,6 +4,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { Home, Search, PlusSquare, User, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
 import HomePage from "./src/pages/Home";
+import HomeUnicornReal from "./src/pages/HomeUnicornReal";
 import ProductDetailPage from "./src/pages/ProductDetail";
 import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
@@ -1214,24 +1215,9 @@ function App() {
   return (
     <div className="app-layout">
       <div className="main-content">
-        <div className="top-status">
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <div className="muted">{isLogged ? (user?.email || "") : "Invitado"}</div>
-            <div className="muted">API: {getApiUrl()}</div>
-          </div>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            {!isLogged ? (
-              <button className="icon-btn" type="button" onClick={() => openAuth("Regístrate o inicia sesión para chatear y publicar.")}>
-                <User size={18} />
-              </button>
-            ) : null}
-            <button className="icon-btn" type="button" onClick={() => refreshData(token, user)} disabled={loading}>
-              <RefreshCcw size={18} />
-            </button>
-          </div>
-        </div>
         <Routes>
           <Route path="/" element={<HomePage products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
+          <Route path="/unicorn" element={<HomeUnicornReal products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
           <Route
             path="/add"
@@ -1297,8 +1283,6 @@ function App() {
             <button className="secondary-btn full" type="button" onClick={handlePasskeyLogin}>
               <Fingerprint size={18} /> Entrar con huella
             </button>
-            <div className="muted" style={{ marginTop: "12px" }}>Origen: {typeof window !== "undefined" ? window.location.origin : ""}</div>
-            <div className="muted">API: {getApiUrl()}</div>
             {error ? <div className="error">{error}</div> : null}
           </div>
         </div>

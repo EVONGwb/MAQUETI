@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Heart, Home, MessageCircle, PlusSquare, Search, Store as StoreIcon } from "lucide-react";
+import { Home, MessageCircle, Plus, Search, User } from "lucide-react";
 
 export default function BottomNav({ isLogged, openAuth }) {
   const location = useLocation();
@@ -9,31 +9,36 @@ export default function BottomNav({ isLogged, openAuth }) {
 
   return (
     <nav className="bottom-nav">
-      <div className={`nav-item ${activePath === "/" ? "active" : ""}`} onClick={() => navigate("/")}>
-        <Home size={24} />
+      <button className={`nav-item ${activePath === "/" ? "active" : ""}`} type="button" onClick={() => navigate("/")}>
+        <Home size={22} />
         <span>Inicio</span>
-      </div>
-      <div className={`nav-item ${activePath === "/explore" ? "active" : ""}`} onClick={() => navigate("/explore")}>
-        <Search size={24} />
+      </button>
+
+      <button className={`nav-item ${activePath === "/explore" ? "active" : ""}`} type="button" onClick={() => navigate("/explore")}>
+        <Search size={22} />
         <span>Explorar</span>
-      </div>
-      <div className="nav-item add-btn" onClick={() => (isLogged ? navigate("/add") : openAuth("Regístrate o inicia sesión para publicar productos."))}>
-        <div className="add-circle">
-          <PlusSquare size={24} color="white" />
+      </button>
+
+      <button
+        className="nav-item nav-fab"
+        type="button"
+        aria-label="Publicar"
+        onClick={() => (isLogged ? navigate("/add") : openAuth("Regístrate o inicia sesión para publicar productos."))}
+      >
+        <div className="nav-fab-circle">
+          <Plus size={22} />
         </div>
-      </div>
-      <div className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} onClick={() => (isLogged ? navigate("/chats") : openAuth("Regístrate o inicia sesión para chatear."))}>
-        <MessageCircle size={24} />
-        <span>Buzón</span>
-      </div>
-      <div className={`nav-item ${activePath === "/favorites" ? "active" : ""}`} onClick={() => navigate("/favorites")}>
-        <Heart size={24} />
-        <span>Favoritos</span>
-      </div>
-      <div className={`nav-item ${activePath === "/store" ? "active" : ""}`} onClick={() => (isLogged ? navigate("/store") : openAuth("Regístrate o inicia sesión para acceder a tu tienda."))}>
-        <StoreIcon size={24} />
-        <span>Tienda</span>
-      </div>
+      </button>
+
+      <button className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} type="button" onClick={() => (isLogged ? navigate("/chats") : openAuth("Regístrate o inicia sesión para chatear."))}>
+        <MessageCircle size={22} />
+        <span>Chat</span>
+      </button>
+
+      <button className={`nav-item ${activePath === "/store" ? "active" : ""}`} type="button" onClick={() => (isLogged ? navigate("/store") : openAuth("Regístrate o inicia sesión para acceder a tu perfil."))}>
+        <User size={22} />
+        <span>Perfil</span>
+      </button>
     </nav>
   );
 }

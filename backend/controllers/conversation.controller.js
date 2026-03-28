@@ -2,6 +2,7 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const Product = require("../models/product.model");
 const User = require("../models/user.model");
+const { getIO } = require("../socket");
 
 const generateNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
@@ -159,9 +160,15 @@ const sendMessage = async (req, res) => {
     if (!conv) return res.status(404).json({ message: "Conversación no encontrada" });
     if (!assertParticipant(conv, userId)) return res.status(403).json({ message: "No autorizado" });
 
-    const images = Array.isArray(req.files)
-      ? req.files.map((file) => `/uploads/chat/${file.filename}`)
+    const uploadedImages = Array.isArray(req.files) ? req.files.map((file) => `/uploads/chat/${file.filename}`) : [];
+    const rawImageUrls = req.body?.imageUrls;
+    const urlImages = Array.isArray(rawImageUrls)
+      ? rawImageUrls.filter((u) => typeof u === "string" && u.trim())
+      : typeof rawImageUrls === "string" && rawImageUrls.trim()
+      ? [rawImageUrls.trim()]
       : [];
+
+    const images = [...uploadedImages, ...urlImages].slice(0, 5);
 
     if (!text && images.length === 0) {
       return res.status(400).json({ message: "El mensaje no puede estar vacío" });
@@ -187,6 +194,10 @@ const sendMessage = async (req, res) => {
 
     const out = newMsg.toObject();
     delete out._id;
+    try {
+      const io = getIO();
+      if (io) io.to(`conversation:${Number(id)}`).emit("receive_message", out);
+    } catch {}
     res.json({ message: out });
   } catch (err) {
     res.status(500).json({ message: "Error al enviar mensaje" });

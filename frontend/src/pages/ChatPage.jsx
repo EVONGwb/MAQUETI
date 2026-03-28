@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Image as ImageIcon, Send, X } from "lucide-react";
-import { getConversationById, getConversationMessages, getUserConversations, markConversationAsRead, resolveImageSrc, sendConversationMessage } from "../services/api";
+import { io } from "socket.io-client";
+import { getApiUrl, getConversationById, getConversationMessages, getUserConversations, markConversationAsRead, resolveImageSrc, sendConversationMessage } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export function ChatListPage({ token, user }) {
@@ -75,6 +76,7 @@ export function ChatDetailPage({ token, user }) {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const socketRef = useRef(null);
 
   const fetchChat = async () => {
     try {
@@ -89,6 +91,27 @@ export function ChatDetailPage({ token, user }) {
 
   useEffect(() => {
     if (token && id) fetchChat();
+  }, [token, id]);
+
+  useEffect(() => {
+    if (!token || !id) return;
+    const socket = io(getApiUrl(), { auth: { token } });
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      socket.emit("join_conversation", { conversationId: id });
+    });
+
+    socket.on("receive_message", (msg) => {
+      if (!msg || String(msg.conversationId) !== String(id)) return;
+      setMessages((prev) => (prev.some((m) => String(m.id) === String(msg.id)) ? prev : [...prev, msg]));
+    });
+
+    return () => {
+      socket.off("receive_message");
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [token, id]);
 
   useEffect(() => {
@@ -118,11 +141,25 @@ export function ChatDetailPage({ token, user }) {
 
     setSending(true);
     try {
-      await sendConversationMessage(id, token, { text, images });
+      if (images.length === 0 && socketRef.current && text.trim()) {
+        const payload = { conversationId: id, text: text.trim() };
+        await new Promise((resolve, reject) => {
+          socketRef.current.emit("send_message", payload, (ack) => {
+            if (ack?.ok) return resolve();
+            return reject(new Error(ack?.message || "No se pudo enviar el mensaje"));
+          });
+        });
+        setText("");
+        markConversationAsRead(id, token).catch(() => {});
+      } else {
+        const data = await sendConversationMessage(id, token, { text, images });
+        if (data?.message) {
+          setMessages((prev) => (prev.some((m) => String(m.id) === String(data.message.id)) ? prev : [...prev, data.message]));
+        }
+        setText("");
+        setImages([]);
+      }
 
-      setText("");
-      setImages([]);
-      await fetchChat();
     } catch (err) {
       if (err?.nonJson) {
         alert("Respuesta inesperada del servidor. Revisa que VITE_API_URL apunte al backend.");

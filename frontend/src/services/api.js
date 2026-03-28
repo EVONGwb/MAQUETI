@@ -79,9 +79,39 @@ export const getConversationMessages = async (conversationId, token) => {
 };
 
 export const sendConversationMessage = async (conversationId, token, { text, images } = {}) => {
+  const cleanText = text && String(text).trim() ? String(text) : "";
+  const imgs = Array.isArray(images) ? images : [];
+
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const canUploadCloudinary = Boolean(cloudName && uploadPreset && typeof File !== "undefined");
+  const hasFiles = canUploadCloudinary && imgs.some((x) => x instanceof File);
+
+  if (hasFiles) {
+    const uploadOne = async (file) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", uploadPreset);
+      const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: fd });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(j?.error?.message || "No se pudo subir la imagen");
+      return j.secure_url;
+    };
+
+    const urls = await Promise.all(imgs.filter((x) => x instanceof File).slice(0, 5).map(uploadOne));
+    const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+      body: JSON.stringify({ text: cleanText, imageUrls: urls }),
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data?.message || `Error enviando mensaje: ${res.status}`);
+    return data;
+  }
+
   const formData = new FormData();
-  if (text && String(text).trim()) formData.append("text", String(text));
-  if (Array.isArray(images)) images.forEach((img) => formData.append("images", img));
+  if (cleanText) formData.append("text", cleanText);
+  imgs.slice(0, 5).forEach((img) => formData.append("images", img));
 
   const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}/messages`, {
     method: "POST",
