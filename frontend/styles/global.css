@@ -2094,6 +2094,25 @@ svg {
   gap: 10px;
 }
 
+.ap-form {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.ap-input {
+  height: 46px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0 14px;
+  font-weight: 800;
+  color: #0f172a;
+  outline: none;
+  width: 100%;
+  min-width: 0;
+}
+
 .ap-provider {
   display: flex;
   justify-content: center;
@@ -2117,6 +2136,18 @@ svg {
   color: #b91c1c;
   font-weight: 800;
   font-size: 13px;
+}
+
+.ap-hint {
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  color: rgba(15, 23, 42, 0.72);
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
 }
 
 /* Common UI Elements */

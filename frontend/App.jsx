@@ -11,6 +11,7 @@ import BottomNav from "./src/components/BottomNav";
 import AuthPrompt from "./src/components/AuthPrompt";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
+import ProfilePage from "./src/pages/Profile";
 import { getApiUrl, parseJsonResponse } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
@@ -841,6 +842,8 @@ const AddProductView = ({ token, onCreated }) => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [limitInfo, setLimitInfo] = useState(null);
+  const navigate = useNavigate();
 
   const CLOUDINARY_CLOUD_NAME = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "").trim();
   const CLOUDINARY_UPLOAD_PRESET = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "").trim();
@@ -883,6 +886,7 @@ const AddProductView = ({ token, onCreated }) => {
     e.preventDefault();
     setUploading(true);
     setMessage("");
+    setLimitInfo(null);
 
     try {
       let uploadedUrl = "";
@@ -914,7 +918,12 @@ const AddProductView = ({ token, onCreated }) => {
       });
       
       const data = await response.json();
-      if (!response.ok) throw new Error(data?.message);
+      if (!response.ok) {
+        if (data?.code === "PRODUCT_LIMIT_REACHED") {
+          setLimitInfo({ limit: data?.limit || null });
+        }
+        throw new Error(data?.message);
+      }
       
       setMessage(data.message || "Producto creado");
       setTitle("");
@@ -960,6 +969,15 @@ const AddProductView = ({ token, onCreated }) => {
         </button>
       </form>
       {message ? <p className="msg">{message}</p> : null}
+      {limitInfo ? (
+        <div className="empty-state">
+          <h4>Límite alcanzado</h4>
+          <p>Los usuarios normales pueden publicar hasta {limitInfo.limit || "X"} productos. Para publicar sin límite, activa el modo Tienda.</p>
+          <button className="primary-btn" type="button" style={{ marginTop: 12 }} onClick={() => navigate("/store")}>
+            Ir a Tienda
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -1102,6 +1120,44 @@ function App() {
     }
   };
 
+  const handlePasswordLogin = async ({ email, password }) => {
+    setError("");
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Error al iniciar sesión");
+      await onAuthSuccess(data);
+    } catch (e) {
+      const msg = e?.message || "Error al iniciar sesión";
+      setError(msg);
+      throw e;
+    }
+  };
+
+  const handlePasswordRegister = async ({ name, email, password }) => {
+    setError("");
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Error al registrarse");
+      await onAuthSuccess(data);
+    } catch (e) {
+      const msg = e?.message || "Error al registrarse";
+      setError(msg);
+      throw e;
+    }
+  };
+
   const handlePasskeyLogin = async () => {
     setError("");
     try {
@@ -1199,6 +1255,16 @@ function App() {
               )
             }
           />
+          <Route
+            path="/profile"
+            element={
+              isLogged ? (
+                <ProfilePage user={user} myProducts={myProducts} onLogout={handleLogout} onRegisterPasskey={handleRegisterPasskey} passkeyMessage={passkeyMessage} />
+              ) : (
+                <AuthRequiredView title="Perfil" message="Regístrate o inicia sesión para acceder a tu perfil." onLogin={() => openAuth("Regístrate o inicia sesión para acceder a tu perfil.")} />
+              )
+            }
+          />
           <Route path="/product/:id" element={<ProductDetailPage products={products} toggleFavorite={toggleFavorite} favorites={favorites} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route
             path="/chats"
@@ -1227,6 +1293,8 @@ function App() {
         onGoogleSuccess={handleGoogleSuccess}
         onGoogleError={() => setError("Error al iniciar sesión")}
         onPasskey={handlePasskeyLogin}
+        onEmailLogin={handlePasswordLogin}
+        onEmailRegister={handlePasswordRegister}
       />
     </div>
   );

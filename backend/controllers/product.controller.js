@@ -1,10 +1,20 @@
 const Product = require("../models/product.model");
+const User = require("../models/user.model");
 
 const generateNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 const allowedStatuses = new Set(["draft", "published", "hidden", "sold_out", "archived"]);
 const normalizeStatus = (value, fallback = "published") => {
   const s = String(value || "").trim().toLowerCase();
   return allowedStatuses.has(s) ? s : fallback;
+};
+const getFreeProductLimit = () => {
+  const raw = process.env.FREE_PRODUCT_LIMIT;
+  const n = raw === undefined ? 10 : Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 10;
+};
+const isStoreActive = async (userId) => {
+  const user = await User.findOne({ id: Number(userId) }, { storeSubscriptionStatus: 1, _id: 0 }).lean();
+  return user?.storeSubscriptionStatus === "active";
 };
 
 const getProducts = async (req, res) => {
@@ -65,11 +75,27 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Title y price son obligatorios" });
     }
 
+    const storeActive = await isStoreActive(userId);
+    if (!storeActive) {
+      const limit = getFreeProductLimit();
+      const count = await Product.countDocuments({
+        userId: Number(userId),
+        $or: [{ status: { $exists: false } }, { status: { $ne: "archived" } }],
+      });
+      if (count >= limit) {
+        return res.status(403).json({
+          message: `Has alcanzado el límite de ${limit} productos para usuarios no suscritos`,
+          code: "PRODUCT_LIMIT_REACHED",
+          limit,
+        });
+      }
+    }
+
     const id = generateNumericId();
     const createdAt = Date.now();
     const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock);
     const finalImageUrl = imageUrl || "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
-    const finalStatus = normalizeStatus(status, "published");
+    const finalStatus = storeActive ? normalizeStatus(status, "published") : "published";
     await Product.create({
       id,
       title,
@@ -137,6 +163,10 @@ const updateProduct = async (req, res) => {
     const updatedImageUrl = imageUrl !== undefined ? imageUrl : row.imageUrl;
     const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock;
     const updatedSku = sku !== undefined ? sku : row.sku;
+    const storeActive = await isStoreActive(userId);
+    if (!storeActive && status !== undefined) {
+      return res.status(403).json({ message: "El estado de publicación requiere suscripción de Tienda", code: "STORE_REQUIRED_FOR_STATUS" });
+    }
     const updatedStatus = status !== undefined ? normalizeStatus(status, row.status || "published") : row.status || "published";
 
     await Product.updateOne(

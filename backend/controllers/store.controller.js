@@ -36,7 +36,10 @@ const requireStoreSubscription = async (req, res, next) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Token requerido" });
-    const user = await User.findOne({ id: Number(userId) }, { storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, _id: 0 }).lean();
+    const user = await User.findOne(
+      { id: Number(userId) },
+      { storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1, _id: 0 }
+    ).lean();
     if (!user) return res.status(401).json({ message: "Usuario no válido" });
     if (user.storeSubscriptionStatus !== "active") {
       if (!user.storePaymentsUnlocked) {

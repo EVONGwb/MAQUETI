@@ -11,6 +11,93 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const generateNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
 
+const passwordRegister = async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const cleanName = String(name || "").trim();
+    const rawPassword = String(password || "");
+
+    if (!cleanEmail || !rawPassword || !cleanName) return res.status(400).json({ message: "Nombre, email y contraseña son requeridos" });
+    if (rawPassword.length < 6) return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
+
+    const existing = await User.findOne({ email: cleanEmail }).select({ id: 1, email: 1, googleSub: 1 });
+    if (existing) return res.status(409).json({ message: "Este email ya está registrado" });
+
+    const hashed = await bcrypt.hash(rawPassword, 10);
+    const created = await User.create({
+      id: generateNumericId(),
+      name: cleanName,
+      email: cleanEmail,
+      password: hashed,
+      googleSub: null,
+    });
+
+    const token = jwt.sign({ id: created.id, email: created.email }, SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return res.status(201).json({
+      message: "Registro correcto",
+      token,
+      user: {
+        id: created.id,
+        name: created.name,
+        email: created.email,
+        isAdmin: Boolean(created.isAdmin),
+        storeSubscriptionStatus: created.storeSubscriptionStatus || "none",
+        storePlan: created.storePlan || null,
+        storeSubscriptionEndsAt: created.storeSubscriptionEndsAt || null,
+        storePaymentsUnlocked: Boolean(created.storePaymentsUnlocked),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al registrar" });
+  }
+};
+
+const passwordLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    const rawPassword = String(password || "");
+    if (!cleanEmail || !rawPassword) return res.status(400).json({ message: "Email y contraseña son requeridos" });
+
+    const user = await User.findOne({ email: cleanEmail }).select({
+      id: 1,
+      name: 1,
+      email: 1,
+      password: 1,
+      googleSub: 1,
+      isAdmin: 1,
+      storeSubscriptionStatus: 1,
+      storePlan: 1,
+      storeSubscriptionEndsAt: 1,
+      storePaymentsUnlocked: 1,
+    });
+    if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
+    if (user.googleSub) return res.status(409).json({ message: "Este email usa Google. Entra con Google." });
+
+    const ok = await bcrypt.compare(rawPassword, user.password);
+    if (!ok) return res.status(401).json({ message: "Credenciales inválidas" });
+
+    const token = jwt.sign({ id: user.id, email: user.email }, SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return res.json({
+      message: "Login correcto",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isAdmin: Boolean(user.isAdmin),
+        storeSubscriptionStatus: user.storeSubscriptionStatus || "none",
+        storePlan: user.storePlan || null,
+        storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,
+        storePaymentsUnlocked: Boolean(user.storePaymentsUnlocked),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al iniciar sesión" });
+  }
+};
+
 const googleLogin = async (req, res) => {
   const { credential } = req.body;
 
@@ -84,5 +171,7 @@ const googleLogin = async (req, res) => {
 };
 
 module.exports = {
+  passwordRegister,
+  passwordLogin,
   googleLogin,
 };

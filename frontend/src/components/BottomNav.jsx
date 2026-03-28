@@ -35,7 +35,7 @@ export default function BottomNav({ isLogged, openAuth }) {
         <span>Chat</span>
       </button>
 
-      <button className={`nav-item ${activePath === "/store" ? "active" : ""}`} type="button" onClick={() => (isLogged ? navigate("/store") : openAuth("Regístrate o inicia sesión para acceder a tu perfil."))}>
+      <button className={`nav-item ${activePath === "/profile" ? "active" : ""}`} type="button" onClick={() => (isLogged ? navigate("/profile") : openAuth("Regístrate o inicia sesión para acceder a tu perfil."))}>
         <User size={22} />
         <span>Perfil</span>
       </button>

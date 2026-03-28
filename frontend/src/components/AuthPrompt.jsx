@@ -1,9 +1,35 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
 
-export default function AuthPrompt({ open, title, message, onClose, onGoogleSuccess, onGoogleError, onPasskey, error }) {
+export default function AuthPrompt({
+  open,
+  title,
+  message,
+  onClose,
+  onGoogleSuccess,
+  onGoogleError,
+  onPasskey,
+  onEmailLogin,
+  onEmailRegister,
+  error,
+}) {
   const [mode, setMode] = useState("login");
+  const providersRef = useRef(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMode("login");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setSubmitting(false);
+    }
+  }, [open]);
 
   const sheet = useMemo(
     () => ({
@@ -26,6 +52,27 @@ export default function AuthPrompt({ open, title, message, onClose, onGoogleSucc
   const subtitle = mode === "register" ? "Regístrate para chatear, guardar favoritos y comprar" : "Inicia sesión para continuar";
   const detail = String(message || "").trim();
   const detailLine = detail ? detail : subtitle;
+  const goToMode = (next) => {
+    setMode(next);
+    requestAnimationFrame(() => {
+      providersRef.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+    });
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      if (mode === "login") {
+        await onEmailLogin?.({ email, password });
+      } else {
+        await onEmailRegister?.({ name, email, password });
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -57,10 +104,10 @@ export default function AuthPrompt({ open, title, message, onClose, onGoogleSucc
             </div>
 
             <div className="ap-actions">
-              <button className={`ap-btn ${mode === "login" ? "primary" : "ghost"}`} type="button" onClick={() => setMode("login")}>
+              <button className={`ap-btn ${mode === "login" ? "primary" : "ghost"}`} type="button" onClick={() => goToMode("login")} aria-pressed={mode === "login"}>
                 Entrar
               </button>
-              <button className={`ap-btn ${mode === "register" ? "primary" : "ghost"}`} type="button" onClick={() => setMode("register")}>
+              <button className={`ap-btn ${mode === "register" ? "primary" : "ghost"}`} type="button" onClick={() => goToMode("register")} aria-pressed={mode === "register"}>
                 Registrarme
               </button>
               <button className="ap-btn text" type="button" onClick={onClose}>
@@ -68,13 +115,28 @@ export default function AuthPrompt({ open, title, message, onClose, onGoogleSucc
               </button>
             </div>
 
-            <div className="ap-providers">
+            <form className="ap-form" onSubmit={submit}>
+              {mode === "register" ? (
+                <input className="ap-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre" autoComplete="name" />
+              ) : null}
+              <input className="ap-input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" inputMode="email" autoComplete="email" />
+              <input className="ap-input" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Contraseña" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} />
+              <button className="ap-provider-btn" type="submit" disabled={submitting}>
+                {submitting ? "Procesando..." : mode === "login" ? "Entrar con email" : "Crear cuenta"}
+              </button>
+            </form>
+
+            <div className="ap-providers" ref={providersRef}>
               <div className="ap-provider">
                 <GoogleLogin onSuccess={onGoogleSuccess} onError={onGoogleError} />
               </div>
-              <button className="ap-provider-btn" type="button" onClick={onPasskey}>
-                Entrar con huella
-              </button>
+              {mode === "login" ? (
+                <button className="ap-provider-btn" type="button" onClick={onPasskey}>
+                  Entrar con huella
+                </button>
+              ) : (
+                <div className="ap-hint">Puedes registrarte con email o con Google. La huella se activa después en Perfil.</div>
+              )}
             </div>
 
             {error ? <div className="ap-error">{error}</div> : null}
