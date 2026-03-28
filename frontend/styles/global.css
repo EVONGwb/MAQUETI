@@ -11,6 +11,17 @@ body {
   overflow-x: hidden;
 }
 
+:root {
+  --app-pad: clamp(8px, 3.4vw, 20px);
+  --app-gap: clamp(10px, 3.6vw, 18px);
+  --app-radius: clamp(12px, 3.8vw, 18px);
+  --app-radius-lg: clamp(16px, 4.8vw, 24px);
+  --app-font: clamp(14px, 4.2vw, 16px);
+  --app-h2: clamp(18px, 5.8vw, 24px);
+  --app-h3: clamp(16px, 4.8vw, 18px);
+  --app-btn-h: clamp(44px, 12vw, 52px);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -203,6 +214,7 @@ svg {
   outline: none;
   font-size: 15px;
   color: #0f172a;
+  min-width: 0;
 }
 
 .mq-search-btn {
@@ -1819,7 +1831,7 @@ svg {
 }
 
 .view-container {
-  padding: 20px;
+  padding: var(--app-pad);
 }
 
 /* Login Screen */
@@ -1900,6 +1912,13 @@ svg {
   border: none;
   padding: 8px 4px;
   border-radius: 18px;
+}
+
+.nav-item span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -2153,12 +2172,12 @@ svg {
 /* Common UI Elements */
 h2 {
   margin-top: 0;
-  font-size: 24px;
+  font-size: var(--app-h2);
   font-weight: 700;
 }
 
 h3 {
-  font-size: 18px;
+  font-size: var(--app-h3);
   margin: 20px 0 15px 0;
 }
 
@@ -2172,9 +2191,10 @@ h3 {
   background: #ff5a00;
   color: white;
   border: none;
-  padding: 14px;
+  min-height: var(--app-btn-h);
+  padding: 0 clamp(12px, 4vw, 16px);
   border-radius: 12px;
-  font-size: 16px;
+  font-size: var(--app-font);
   font-weight: 600;
   cursor: pointer;
   width: 100%;
@@ -2197,6 +2217,7 @@ h3 {
   outline: none;
   width: 100%;
   font-size: 16px;
+  min-width: 0;
 }
 
 .banner {
@@ -2238,8 +2259,8 @@ h3 {
 /* Product Grid */
 .product-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 3.4vw, 15px);
 }
 
 .product-card {
@@ -2392,12 +2413,13 @@ h3 {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 14px;
+  min-height: var(--app-btn-h);
+  padding: 0 clamp(12px, 4vw, 16px);
   margin-top: 30px;
   background: #f8f9fa;
   border: 1px solid #ddd;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: var(--app-font);
   font-weight: 600;
   color: #dc3545;
   cursor: pointer;
@@ -2419,11 +2441,12 @@ h3 {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 14px;
+  min-height: var(--app-btn-h);
+  padding: 0 clamp(12px, 4vw, 16px);
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: var(--app-font);
   font-weight: 600;
   color: #111;
   cursor: pointer;
@@ -3181,5 +3204,165 @@ h3 {
 
   .ap-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .st-products-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 280px) {
+  .view-container {
+    padding: 8px;
+  }
+
+  .mq-topbar {
+    padding: 12px 12px;
+  }
+
+  .mq-brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 18px;
+  }
+
+  .mq-brand-wrap {
+    gap: 8px;
+  }
+
+  .mq-search {
+    padding: 10px 10px;
+    border-radius: 18px;
+    gap: 10px;
+  }
+
+  .mq-search-btn {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .mq-stores-row {
+    gap: 10px;
+  }
+
+  .mq-stores-row .mq-store-card {
+    min-width: 200px;
+  }
+
+  .mq-store-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .mq-store-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+
+  .st-products-row {
+    grid-auto-columns: minmax(220px, 1fr);
+    gap: 12px;
+  }
+
+  .bottom-nav {
+    width: calc(100% - 8px);
+    bottom: 8px;
+    height: calc(58px + env(safe-area-inset-bottom));
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    border-radius: 20px;
+  }
+
+  .nav-item {
+    padding: 6px 2px;
+  }
+
+  .nav-item span {
+    display: none;
+  }
+
+  .nav-fab {
+    top: -12px;
+  }
+
+  .nav-fab-circle {
+    width: 46px;
+    height: 46px;
+  }
+
+  .chat-composer {
+    width: calc(100% - 8px);
+    grid-template-columns: 38px 1fr 60px;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .chat-composer input {
+    height: 42px;
+    border-radius: 14px;
+    padding: 0 10px;
+  }
+
+  .chat-send-btn {
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .chat-topbar {
+    grid-template-columns: 40px 1fr 40px;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .chat-back-btn,
+  .chat-more-btn,
+  .chat-attach-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .chat-header-info {
+    min-width: 0;
+  }
+
+  .chat-header-info h1,
+  .chat-header-info p,
+  .pd-topbar h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-header-info h1 {
+    font-size: 16px;
+  }
+
+  .chat-header-info p {
+    font-size: 12px;
+  }
+
+  .pd-topbar {
+    padding: 12px 10px;
+  }
+
+  .pd-spacer {
+    width: 40px;
+  }
+
+  .pd-back-btn {
+    padding: 8px 10px;
+    border-radius: 12px;
   }
 }
