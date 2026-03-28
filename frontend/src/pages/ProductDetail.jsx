@@ -1,29 +1,47 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Heart } from "lucide-react";
-import { getApiUrl, parseJsonResponse, resolveImageSrc } from "../services/api";
+import { getApiUrl, parseJsonResponse, resolveImageSrc, fetchProductById } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export default function ProductDetailPage({ products, toggleFavorite, favorites, onRequireAuth }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const product = products.find((p) => String(p.id) === String(id));
+  const productFromList = useMemo(() => products.find((p) => String(p.id) === String(id)) || null, [products, id]);
+  const [product, setProduct] = useState(productFromList);
+  const [loading, setLoading] = useState(!productFromList);
+  const [error, setError] = useState("");
   const [contactMessage, setContactMessage] = useState("");
 
-  if (!product) {
-    return (
-      <div className="view-container">
-        <div className="back-btn" onClick={() => navigate(-1)}>
-          <ChevronLeft />
-        </div>
-        <div className="empty-state" style={{ marginTop: "60px" }}>
-          Producto no encontrado
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (productFromList) {
+      setProduct(productFromList);
+      setLoading(false);
+      setError("");
+      return;
+    }
 
-  const isFav = favorites.includes(product.id);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await fetchProductById(id);
+        if (cancelled) return;
+        setProduct(data?.product || null);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e?.message || "No se pudo cargar el producto");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, productFromList]);
+
+  const isFav = product ? favorites.includes(product.id) : false;
 
   const handleContactSeller = async () => {
     setContactMessage("");
@@ -57,51 +75,76 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
   };
 
   return (
-    <div className="product-detail-view">
-      <div className="product-detail-image" style={{ backgroundImage: `url(${resolveImageSrc(product.imageUrl)})` }}>
-        <div className="back-btn" onClick={() => navigate(-1)}>
-          <ChevronLeft />
-        </div>
-      </div>
+    <div className="pd-page">
+      <header className="pd-topbar">
+        <button className="pd-back-btn" onClick={() => navigate(-1)} type="button">
+          ← Volver
+        </button>
+        <h1>Detalle del producto</h1>
+        <div className="pd-spacer" />
+      </header>
 
-      <div className="product-detail-content">
-        <p className="product-detail-price">{priceLabel(product.price)}</p>
-        <h2 className="product-detail-title">{product.title}</h2>
+      <main className="pd-main">
+        {loading ? (
+          <div className="pd-state-card">
+            <h3>Cargando producto...</h3>
+          </div>
+        ) : error ? (
+          <div className="pd-state-card">
+            <h3>Error</h3>
+            <p>{error}</p>
+          </div>
+        ) : product ? (
+          <div className="pd-grid">
+            <section className="pd-gallery-card">
+              <img src={resolveImageSrc(product.imageUrl)} alt={product.title} className="pd-main-image" />
+            </section>
 
-        <div className="product-detail-meta">
-          <span className="tag new">{product.condition || "—"}</span>
-          <span className="tag zone">{product.category || "Otros"}</span>
-          {product.location && <span className="tag zone">{product.location}</span>}
-        </div>
+            <section className="pd-info-card">
+              <p className="pd-category">{product.category || "General"}</p>
+              <h2>{product.title}</h2>
+              <div className="pd-price">{priceLabel(product.price)}</div>
 
-        <h3>Descripción</h3>
-        <p className="product-detail-desc">{product.description || "El vendedor no ha añadido una descripción para este producto."}</p>
+              <div className="pd-meta">
+                <span>📍 {product.location || "Sin ubicación"}</span>
+                <span>🏷 {product.condition || "Disponible"}</span>
+              </div>
 
-        {product.stock !== null && product.stock !== undefined && (
-          <p style={{ color: "#666", fontSize: "14px", marginBottom: "20px" }}>
-            Stock disponible: <strong>{product.stock}</strong> unidades
-          </p>
-        )}
+              <p className="pd-description">{product.description || "Sin descripción"}</p>
 
-        <div className="action-bar">
-          <button className="chat-btn" onClick={handleContactSeller}>
-            Contactar vendedor
-          </button>
-          <button
-            className="chat-btn"
-            style={{ background: isFav ? "#ff5a00" : "#fff", color: isFav ? "#fff" : "#ff5a00", border: "1px solid #ff5a00", transition: "all 0.2s" }}
-            onClick={() => toggleFavorite(product.id)}
-            type="button"
-          >
-            <Heart size={20} fill={isFav ? "white" : "none"} />
-          </button>
-        </div>
-        {contactMessage ? (
-          <div className="error" style={{ marginTop: "12px" }}>
-            {contactMessage}
+              <div className="pd-seller-box">
+                <h4>Vendedor</h4>
+                <p>{product.sellerName || "Vendedor"}</p>
+              </div>
+
+              <div className="pd-actions">
+                <button className="pd-chat-btn" onClick={handleContactSeller} type="button">
+                  💬 Hablar con el vendedor
+                </button>
+                <button className="pd-buy-btn" type="button" disabled>
+                  Comprar ahora
+                </button>
+              </div>
+
+              <div className="pd-actions">
+                <button
+                  className={`pd-fav-btn ${isFav ? "active" : ""}`}
+                  onClick={() => toggleFavorite(product.id)}
+                  type="button"
+                >
+                  {isFav ? "❤ Guardado" : "♡ Guardar"}
+                </button>
+              </div>
+
+              {contactMessage ? (
+                <div className="pd-state-card" style={{ marginTop: "16px" }}>
+                  <p>{contactMessage}</p>
+                </div>
+              ) : null}
+            </section>
           </div>
         ) : null}
-      </div>
+      </main>
     </div>
   );
 }
