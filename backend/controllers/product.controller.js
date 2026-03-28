@@ -1,6 +1,11 @@
 const Product = require("../models/product.model");
 
 const generateNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
+const allowedStatuses = new Set(["draft", "published", "hidden", "sold_out", "archived"]);
+const normalizeStatus = (value, fallback = "published") => {
+  const s = String(value || "").trim().toLowerCase();
+  return allowedStatuses.has(s) ? s : fallback;
+};
 
 const getProducts = async (req, res) => {
   try {
@@ -16,7 +21,9 @@ const getProducts = async (req, res) => {
       }
     }
 
-    const query = userId ? { userId: Number(userId) } : {};
+    const query = userId
+      ? { userId: Number(userId) }
+      : { $or: [{ status: "published" }, { status: { $exists: false } }] };
     const products = await Product.find(query, { _id: 0 }).sort({ createdAt: -1 }).lean();
     return res.json({ total: products.length, products });
   } catch (error) {
@@ -33,6 +40,12 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
+    const requesterId = req.user?.id;
+    const status = product.status || "published";
+    if (status !== "published" && String(product.userId) !== String(requesterId || "")) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
     return res.json({ product });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener producto" });
@@ -41,7 +54,7 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
-    const { title, price, description, condition, category, location, imageUrl, stock, sku } = req.body;
+    const { title, price, description, condition, category, location, imageUrl, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -56,6 +69,7 @@ const createProduct = async (req, res) => {
     const createdAt = Date.now();
     const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock);
     const finalImageUrl = imageUrl || "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
+    const finalStatus = normalizeStatus(status, "published");
     await Product.create({
       id,
       title,
@@ -68,6 +82,7 @@ const createProduct = async (req, res) => {
       imageUrl: finalImageUrl,
       stock: safeStock,
       sku: sku || null,
+      status: finalStatus,
       createdAt,
     });
 
@@ -85,6 +100,7 @@ const createProduct = async (req, res) => {
         imageUrl: finalImageUrl,
         stock: safeStock,
         sku: sku || null,
+        status: finalStatus,
         createdAt,
       },
     });
@@ -96,7 +112,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, price, description, condition, category, location, imageUrl, stock, sku } = req.body;
+    const { title, price, description, condition, category, location, imageUrl, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -121,6 +137,7 @@ const updateProduct = async (req, res) => {
     const updatedImageUrl = imageUrl !== undefined ? imageUrl : row.imageUrl;
     const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock;
     const updatedSku = sku !== undefined ? sku : row.sku;
+    const updatedStatus = status !== undefined ? normalizeStatus(status, row.status || "published") : row.status || "published";
 
     await Product.updateOne(
       { id: Number(id) },
@@ -135,6 +152,7 @@ const updateProduct = async (req, res) => {
           imageUrl: updatedImageUrl,
           stock: updatedStock,
           sku: updatedSku,
+          status: updatedStatus,
         },
       }
     );
@@ -153,6 +171,7 @@ const updateProduct = async (req, res) => {
         imageUrl: updatedImageUrl,
         stock: updatedStock,
         sku: updatedSku,
+        status: updatedStatus,
         createdAt: row.createdAt,
       },
     });

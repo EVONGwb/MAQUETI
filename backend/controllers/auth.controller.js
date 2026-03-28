@@ -52,7 +52,7 @@ const googleLogin = async (req, res) => {
         $setOnInsert: { id: generateNumericId() },
       },
       { new: true, upsert: true }
-    ).select({ id: 1, name: 1, email: 1 });
+    ).select({ id: 1, name: 1, email: 1, isAdmin: 1, storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1 });
 
     if (!user) {
       return res.status(500).json({
@@ -69,6 +69,11 @@ const googleLogin = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        isAdmin: Boolean(user.isAdmin),
+        storeSubscriptionStatus: user.storeSubscriptionStatus || "none",
+        storePlan: user.storePlan || null,
+        storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,
+        storePaymentsUnlocked: Boolean(user.storePaymentsUnlocked),
       },
     });
   } catch (error) {

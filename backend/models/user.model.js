@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
     googleSub: { type: String, default: null },
+    isAdmin: { type: Boolean, default: false, index: true },
+    storeSubscriptionStatus: { type: String, default: "none", index: true },
+    storePlan: { type: String, default: null },
+    storeSubscriptionEndsAt: { type: Number, default: null },
+    storePaymentsUnlocked: { type: Boolean, default: false, index: true },
   },
   { versionKey: false }
 );

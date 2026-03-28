@@ -9,6 +9,8 @@ import ProductDetailPage from "./src/pages/ProductDetail";
 import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
 import AuthPrompt from "./src/components/AuthPrompt";
+import StoreHub from "./src/pages/StoreHub";
+import PublicStorePage from "./src/pages/PublicStore";
 import { getApiUrl, parseJsonResponse } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
@@ -788,52 +790,6 @@ const FavoritesView = ({ products, favorites }) => {
   );
 };
 
-const StoreView = ({ user, myProducts, onLogout, onRegisterPasskey, passkeyMessage }) => (
-  <div className="view-container">
-    <div className="store-header">
-      <div className="store-banner placeholder-img"></div>
-      <div className="store-profile">
-        <div className="store-avatar"></div>
-        <div>
-          <h2>Mi Tienda</h2>
-          <p>{user?.email || ""}</p>
-        </div>
-      </div>
-    </div>
-
-    <div className="store-stats">
-      <div className="stat-box">
-        <p>Productos</p>
-        <h3>{myProducts.length}</h3>
-      </div>
-      <div className="stat-box">
-        <p>Agotados</p>
-        <h3>{myProducts.filter((p) => Number(p.stock || 0) === 0).length}</h3>
-      </div>
-    </div>
-
-    <div className="btn-row">
-      <button className="secondary-btn" type="button" onClick={onRegisterPasskey}>
-        <Fingerprint size={18} /> Activar huella
-      </button>
-      <button className="logout-btn" type="button" onClick={onLogout}>
-        <LogOut size={18} /> Cerrar sesión
-      </button>
-    </div>
-    {passkeyMessage ? <div className="msg">{passkeyMessage}</div> : null}
-
-    <div className="store-tabs">
-      <span className="active">Productos</span>
-    </div>
-    {myProducts.length === 0 ? <div className="empty-state">Publica tu primer producto.</div> : null}
-    <div className="product-grid">
-      {myProducts.map((product) => (
-        <ProductCard key={product.id} product={product} />
-      ))}
-    </div>
-  </div>
-);
-
 const InventoryView = ({ myProducts }) => {
   const total = myProducts.length;
   const low = myProducts.filter((p) => Number(p.stock || 0) > 0 && Number(p.stock || 0) < 3).length;
@@ -1220,6 +1176,7 @@ function App() {
           <Route path="/" element={<HomePage products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route path="/unicorn" element={<HomeUnicornReal products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
+          <Route path="/shop/:slug" element={<PublicStorePage />} />
           <Route
             path="/add"
             element={
@@ -1236,13 +1193,7 @@ function App() {
             path="/store"
             element={
               isLogged ? (
-                <StoreView
-                  user={user}
-                  myProducts={myProducts}
-                  onLogout={handleLogout}
-                  onRegisterPasskey={handleRegisterPasskey}
-                  passkeyMessage={passkeyMessage}
-                />
+                <StoreHub token={token} user={user} myProducts={myProducts} refreshData={refreshData} onRequireAuth={(msg) => openAuth(msg)} />
               ) : (
                 <AuthRequiredView title="Mi Tienda" message="Regístrate o inicia sesión para acceder a tu tienda." onLogin={() => openAuth("Regístrate o inicia sesión para acceder a tu tienda.")} />
               )

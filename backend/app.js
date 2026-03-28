@@ -15,12 +15,16 @@ const webauthnRoutes = require("./routes/webauthnRoutes");
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 const conversationRoutes = require("./routes/chatRoutes");
+const storeRoutes = require("./routes/storeRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 app.use("/api", testRoutes); 
 app.use("/api", authRoutes); 
 app.use("/api", webauthnRoutes); 
 app.use("/api", userRoutes); 
 app.use("/api", productRoutes); 
+app.use("/api", storeRoutes);
+app.use("/api", adminRoutes);
 app.use("/api/conversations", conversationRoutes);
 
 const frontendDistPath = path.join(__dirname, "../frontend/dist");

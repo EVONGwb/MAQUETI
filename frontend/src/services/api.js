@@ -46,6 +46,52 @@ const withAuthHeaders = (token, extra = {}) => {
   return headers;
 };
 
+export const fetchMyStore = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/stores/me`, { headers: withAuthHeaders(token) });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) {
+    const err = new Error(data?.message || `Error cargando tienda: ${res.status}`);
+    err.status = res.status;
+    err.code = data?.code;
+    throw err;
+  }
+  return data;
+};
+
+export const upsertMyStore = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/stores/me`, {
+    method: "POST",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) {
+    const err = new Error(data?.message || `Error guardando tienda: ${res.status}`);
+    err.status = res.status;
+    err.code = data?.code;
+    throw err;
+  }
+  return data;
+};
+
+export const fetchPublicStore = async (slug) => {
+  const res = await fetch(`${getApiUrl()}/api/stores/${encodeURIComponent(slug)}`);
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando tienda: ${res.status}`);
+  return data;
+};
+
+export const updateProduct = async (id, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/products/${id}`, {
+    method: "PUT",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando producto: ${res.status}`);
+  return data;
+};
+
 export const createOrGetConversation = async (productId, token) => {
   const res = await fetch(`${getApiUrl()}/api/conversations`, {
     method: "POST",

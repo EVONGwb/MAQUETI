@@ -11,7 +11,7 @@ const {
 } = require("../../controllers/product.controller"); 
  
 router.get("/products", authMiddleware.optionalAuthMiddleware, getProducts); 
-router.get("/products/:id", getProductById); 
+router.get("/products/:id", authMiddleware.optionalAuthMiddleware, getProductById); 
 router.post("/products", authMiddleware, createProduct); 
 router.put("/products/:id", authMiddleware, updateProduct); 
 router.delete("/products/:id", authMiddleware, deleteProduct); 

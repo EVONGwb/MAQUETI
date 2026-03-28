@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema(
     imageUrl: { type: String, default: null },
     stock: { type: Number, default: null },
     sku: { type: String, default: null },
+    status: { type: String, default: "published", index: true },
     createdAt: { type: Number, required: true, index: true },
   },
   { versionKey: false }
