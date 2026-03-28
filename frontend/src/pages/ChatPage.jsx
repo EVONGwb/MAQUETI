@@ -45,15 +45,15 @@ export function ChatListPage({ token, user }) {
             const img = conv.productImageUrl ? resolveImageSrc(conv.productImageUrl) : "";
 
             return (
-              <div key={conv.id} className="feed-item" onClick={() => navigate(`/chats/${conv.id}`)} style={{ cursor: "pointer" }}>
+              <div key={conv.id} className="chat-row" onClick={() => navigate(`/chats/${conv.id}`)} style={{ cursor: "pointer" }}>
                 <div
-                  className="feed-img placeholder-img"
-                  style={img ? { backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center", width: "60px", height: "60px", flexShrink: 0 } : { width: "60px", height: "60px", flexShrink: 0 }}
+                  className="chat-row-thumb placeholder-img"
+                  style={img ? { backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
                 ></div>
-                <div className="feed-details" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <h4 style={{ margin: "0 0 4px 0", fontSize: "15px" }}>{conv.productTitle}</h4>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>Con: {otherName || "Usuario"}</p>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{conv.lastMessage}</p>
+                <div className="chat-row-details">
+                  <h4 className="chat-row-title">{conv.productTitle}</h4>
+                  <p className="chat-row-subtitle">Con: {otherName || "Usuario"}</p>
+                  <p className="chat-row-preview">{conv.lastMessage}</p>
                 </div>
               </div>
             );
