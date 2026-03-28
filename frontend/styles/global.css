@@ -1,3 +1,4 @@
+html,
 body {
   margin: 0;
   padding: 0;
@@ -5,10 +6,27 @@ body {
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: #f8f9fa;
   color: #333;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 * {
   box-sizing: border-box;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
 }
 
 /* Layout */
@@ -1769,6 +1787,14 @@ body {
 }
 
 @media (max-width: 720px) {
+  .store-header {
+    margin: 0 0 16px 0;
+  }
+
+  .store-profile {
+    padding: 0 12px;
+  }
+
   .chat-composer {
     width: calc(100% - 12px);
     bottom: 88px;
@@ -2492,6 +2518,8 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .image-upload {
@@ -2505,6 +2533,8 @@ h3 {
   font-weight: 500;
   cursor: pointer;
   background: #fafafa;
+  width: 100%;
+  max-width: 100%;
 }
 
 .add-form input {
@@ -2513,6 +2543,9 @@ h3 {
   border-radius: 10px;
   font-size: 16px;
   outline: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .add-form input:focus {
@@ -2522,10 +2555,26 @@ h3 {
 .row-inputs {
   display: flex;
   gap: 15px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .row-inputs input {
   flex: 1;
+  min-width: 0;
+}
+
+.add-form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .row-inputs {
+    flex-direction: column;
+  }
 }
 
 .msg {
