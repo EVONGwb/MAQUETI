@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Image as ImageIcon, Send, X } from "lucide-react";
-import { getApiUrl, parseJsonResponse, resolveImageSrc } from "../services/api";
+import { getConversationById, getConversationMessages, getUserConversations, markConversationAsRead, resolveImageSrc, sendConversationMessage } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export function ChatListPage({ token, user }) {
@@ -13,12 +13,7 @@ export function ChatListPage({ token, user }) {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/conversations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await parseJsonResponse(res);
-        if (!res.ok) throw new Error(data.message || "Error al cargar chats");
+        const data = await getUserConversations(token);
         setConversations(data.conversations || []);
       } catch (err) {
         if (err?.nonJson) {
@@ -83,25 +78,10 @@ export function ChatDetailPage({ token, user }) {
 
   const fetchChat = async () => {
     try {
-      const apiUrl = getApiUrl();
-      const [convRes, msgRes] = await Promise.all([
-        fetch(`${apiUrl}/api/conversations/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/conversations/${id}/messages`, { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-
-      const convJson = await parseJsonResponse(convRes);
-      if (!convRes.ok) throw new Error(convJson?.message || "Error al cargar la conversación");
-
-      const msgJson = await parseJsonResponse(msgRes);
-      if (!msgRes.ok) throw new Error(msgJson?.message || "Error al cargar los mensajes");
-
+      const [convJson, msgJson] = await Promise.all([getConversationById(id, token), getConversationMessages(id, token)]);
       setConvData(convJson.conversation);
       setMessages(msgJson.messages || []);
-
-      fetch(`${apiUrl}/api/conversations/${id}/read`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      markConversationAsRead(id, token).catch(() => {});
     } finally {
       setLoading(false);
     }
@@ -138,19 +118,7 @@ export function ChatDetailPage({ token, user }) {
 
     setSending(true);
     try {
-      const apiUrl = getApiUrl();
-      const formData = new FormData();
-      if (text.trim()) formData.append("text", text);
-      images.forEach((img) => formData.append("images", img));
-
-      const res = await fetch(`${apiUrl}/api/conversations/${id}/messages`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      const data = await parseJsonResponse(res);
-      if (!res.ok) throw new Error(data?.message || "Error al enviar mensaje");
+      await sendConversationMessage(id, token, { text, images });
 
       setText("");
       setImages([]);

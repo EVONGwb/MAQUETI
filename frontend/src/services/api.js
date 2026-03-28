@@ -39,3 +39,66 @@ export const fetchProductById = async (id) => {
   if (!res.ok) throw new Error(data?.message || `Error cargando producto: ${res.status}`);
   return data;
 };
+
+const withAuthHeaders = (token, extra = {}) => {
+  const headers = { ...extra };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+};
+
+export const createOrGetConversation = async (productId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/conversations`, {
+    method: "POST",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify({ productId }),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error creando conversación: ${res.status}`);
+  return data;
+};
+
+export const getUserConversations = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/conversations`, { headers: withAuthHeaders(token) });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando conversaciones: ${res.status}`);
+  return data;
+};
+
+export const getConversationById = async (conversationId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}`, { headers: withAuthHeaders(token) });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando conversación: ${res.status}`);
+  return data;
+};
+
+export const getConversationMessages = async (conversationId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}/messages`, { headers: withAuthHeaders(token) });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando mensajes: ${res.status}`);
+  return data;
+};
+
+export const sendConversationMessage = async (conversationId, token, { text, images } = {}) => {
+  const formData = new FormData();
+  if (text && String(text).trim()) formData.append("text", String(text));
+  if (Array.isArray(images)) images.forEach((img) => formData.append("images", img));
+
+  const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: withAuthHeaders(token),
+    body: formData,
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error enviando mensaje: ${res.status}`);
+  return data;
+};
+
+export const markConversationAsRead = async (conversationId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/conversations/${conversationId}/read`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error marcando como leído: ${res.status}`);
+  return data;
+};

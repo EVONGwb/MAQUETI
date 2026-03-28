@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getApiUrl, parseJsonResponse, resolveImageSrc } from "../services/api";
+import { createOrGetConversation, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
@@ -44,17 +44,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
       return;
     }
     try {
-      const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/conversations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId }),
-      });
-      const data = await parseJsonResponse(res);
-      if (!res.ok) throw new Error(data?.message || "No se pudo iniciar la conversación");
+      const data = await createOrGetConversation(productId, token);
       navigate(`/chats/${data.conversation.id}`);
     } catch (e) {
       if (e?.nonJson) {
