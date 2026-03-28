@@ -514,27 +514,45 @@ body {
   margin-top: 14px;
 }
 
+.mq-product-link,
+.mq-product-title-link,
+.mq-chat-inline-btn {
+  text-decoration: none;
+}
+
+.mq-product-title-link {
+  color: inherit;
+}
+
 .mq-fav-inline {
   flex: 1;
-  padding: 10px 12px;
   border-radius: 14px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  padding: 10px 12px;
   background: #f3f4f6;
   color: #111827;
-  font-weight: 800;
   border: none;
 }
 
 .mq-fav-inline.active {
-  background: rgba(239, 68, 68, 0.14);
-  color: #ef4444;
+  color: #dc2626;
 }
 
 .mq-chat-inline-btn {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
   padding: 10px 12px;
   border-radius: 14px;
   background: #eff6ff;
   color: #1d4ed8;
-  font-weight: 800;
   border: none;
 }
 
