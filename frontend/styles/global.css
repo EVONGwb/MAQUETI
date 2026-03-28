@@ -2026,6 +2026,100 @@ svg {
   margin: 4px auto 10px;
 }
 
+.install-banner {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  z-index: 260;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 12px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.92);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.install-banner-title {
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.install-banner-subtitle {
+  font-weight: 700;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.install-banner-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.install-btn {
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.install-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.install-ios {
+  position: fixed;
+  inset: 0;
+  z-index: 280;
+  background: rgba(2, 6, 23, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.install-ios-card {
+  width: min(520px, 100%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 24px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.install-ios-title {
+  font-weight: 900;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.install-ios-text {
+  font-weight: 700;
+  font-size: 14px;
+  color: rgba(15, 23, 42, 0.72);
+  line-height: 1.4;
+}
+
 .ap-top {
   display: grid;
   grid-template-columns: 42px 1fr 42px;

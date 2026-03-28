@@ -9,6 +9,7 @@ import ProductDetailPage from "./src/pages/ProductDetail";
 import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
 import AuthPrompt from "./src/components/AuthPrompt";
+import InstallPrompt from "./src/components/InstallPrompt";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
 import ProfilePage from "./src/pages/Profile";
@@ -1283,6 +1284,7 @@ function App() {
         </Routes>
       </div>
 
+      <InstallPrompt />
       <BottomNav isLogged={isLogged} openAuth={openAuth} />
       <AuthPrompt
         open={showAuth}
