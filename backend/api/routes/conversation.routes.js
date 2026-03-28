@@ -6,13 +6,13 @@ const fs = require("fs");
 
 const authMiddleware = require("../middlewares/auth.middleware");
 const {
-  getConversations,
-  createOrGetConversation,
+  getUserConversations,
+  getOrCreateConversation,
   getConversationById,
-  getMessages,
+  getConversationMessages,
   sendMessage,
-  markAsRead
-} = require("../../controllers/conversation.controller");
+  markConversationAsRead,
+} = require("../../controllers/chatController");
 
 const uploadDir = path.join(__dirname, "../../..", "storage", "chat_uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -49,11 +49,11 @@ const upload = multer({
 
 router.use(authMiddleware);
 
-router.get("/", getConversations);
-router.post("/", createOrGetConversation);
+router.get("/", getUserConversations);
+router.post("/", getOrCreateConversation);
 router.get("/:id", getConversationById);
-router.get("/:id/messages", getMessages);
+router.get("/:id/messages", getConversationMessages);
 router.post("/:id/messages", upload.array('images', 5), sendMessage);
-router.patch("/:id/read", markAsRead);
+router.patch("/:id/read", markConversationAsRead);
 
 module.exports = router;

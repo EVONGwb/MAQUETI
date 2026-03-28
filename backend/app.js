@@ -9,12 +9,12 @@ app.use(express.json());
 
 app.use("/uploads/chat", express.static(path.join(__dirname, "../storage/chat_uploads")));
 
-const testRoutes = require("./api/routes/test.routes"); 
-const authRoutes = require("./api/routes/auth.routes"); 
-const webauthnRoutes = require("./api/routes/webauthn.routes"); 
-const userRoutes = require("./api/routes/user.routes"); 
-const productRoutes = require("./api/routes/product.routes"); 
-const conversationRoutes = require("./api/routes/conversation.routes");
+const testRoutes = require("./routes/testRoutes");
+const authRoutes = require("./routes/authRoutes");
+const webauthnRoutes = require("./routes/webauthnRoutes");
+const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
+const conversationRoutes = require("./routes/chatRoutes");
 
 app.use("/api", testRoutes); 
 app.use("/api", authRoutes); 
