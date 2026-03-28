@@ -1,10 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { resolveImageSrc } from "../services/api";
+import { getApiUrl, parseJsonResponse, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
-export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite }) {
+export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
   const navigate = useNavigate();
+  const [chatError, setChatError] = useState("");
 
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
@@ -35,6 +36,34 @@ export default function HomePage({ products, search, setSearch, categories, acti
     { id: 2, name: "Moda Street", tag: "Ropa urbana", rating: 4.8, products: 86, avatar: "MS" },
     { id: 3, name: "Game Zone", tag: "Gaming", rating: 4.7, products: 59, avatar: "GZ" },
   ];
+
+  const handleStartChat = async (productId) => {
+    setChatError("");
+    if (!token) {
+      onRequireAuth?.();
+      return;
+    }
+    try {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await parseJsonResponse(res);
+      if (!res.ok) throw new Error(data?.message || "No se pudo iniciar la conversación");
+      navigate(`/chats/${data.conversation.id}`);
+    } catch (e) {
+      if (e?.nonJson) {
+        setChatError("Respuesta inesperada del servidor. Revisa que VITE_API_URL apunte al backend.");
+      } else {
+        setChatError(e?.message || "No se pudo iniciar la conversación");
+      }
+    }
+  };
 
   return (
     <div className="mq-home">
@@ -259,11 +288,39 @@ export default function HomePage({ products, search, setSearch, categories, acti
                       <strong>{priceLabel(product.price)}</strong>
                       <span>{product.location || "Sin ubicación"}</span>
                     </div>
+                    <div className="mq-product-actions">
+                      <button
+                        className={`mq-fav-inline ${favorites.includes(product.id) ? "active" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product.id);
+                        }}
+                        type="button"
+                      >
+                        {favorites.includes(product.id) ? "❤ Guardado" : "♡ Guardar"}
+                      </button>
+                      <button
+                        className="mq-chat-inline-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartChat(product.id);
+                        }}
+                        type="button"
+                      >
+                        💬 Chat
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}
             </div>
           )}
+          {chatError ? (
+            <div className="mq-empty-state" style={{ marginTop: "16px" }}>
+              <h4>No se pudo abrir el chat</h4>
+              <p>{chatError}</p>
+            </div>
+          ) : null}
         </section>
       </main>
     </div>

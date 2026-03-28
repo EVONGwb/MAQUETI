@@ -508,6 +508,36 @@ body {
   gap: 12px;
 }
 
+.mq-product-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mq-fav-inline {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 800;
+  border: none;
+}
+
+.mq-fav-inline.active {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ef4444;
+}
+
+.mq-chat-inline-btn {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+  border: none;
+}
+
 .mq-badge {
   display: inline-flex;
   padding: 8px 12px;
