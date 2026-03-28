@@ -871,6 +871,11 @@ svg {
   overflow-x: hidden;
   background: linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
   padding-bottom: 110px;
+  --st-pad-x: clamp(10px, 3.2vw, 16px);
+  --st-gap: clamp(10px, 3.5vw, 18px);
+  --st-radius: clamp(20px, 5.2vw, 30px);
+  --st-pill-py: clamp(8px, 2.4vw, 10px);
+  --st-pill-px: clamp(12px, 3.8vw, 16px);
 }
 
 .st-bg-orb {
@@ -903,7 +908,7 @@ svg {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 16px;
+  padding: clamp(12px, 3.5vw, 18px) var(--st-pad-x);
   background: rgba(255, 255, 255, 0.68);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
@@ -912,18 +917,18 @@ svg {
 .st-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 2.8vw, 12px);
 }
 
 .st-logo-box {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
+  width: clamp(42px, 12vw, 52px);
+  height: clamp(42px, 12vw, 52px);
+  border-radius: clamp(14px, 4vw, 18px);
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
-  font-size: 26px;
+  font-size: clamp(20px, 6vw, 26px);
   font-weight: 800;
   box-shadow: 0 16px 35px rgba(37, 99, 235, 0.3);
 }
@@ -931,12 +936,12 @@ svg {
 .st-brand-kicker {
   margin: 0 0 2px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: clamp(11px, 3.2vw, 13px);
 }
 
 .st-brand h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: clamp(18px, 5.6vw, 24px);
   line-height: 1;
   font-weight: 900;
   letter-spacing: 0.3px;
@@ -944,28 +949,28 @@ svg {
 
 .st-header-actions {
   display: flex;
-  gap: 10px;
+  gap: clamp(8px, 2.2vw, 10px);
 }
 
 .st-icon-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+  width: clamp(40px, 11.5vw, 48px);
+  height: clamp(40px, 11.5vw, 48px);
+  border-radius: clamp(14px, 3.8vw, 16px);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-  font-size: 18px;
+  font-size: clamp(16px, 4.6vw, 18px);
 }
 
 .st-main {
   max-width: 1260px;
   margin: 0 auto;
-  padding: 18px 14px 0;
+  padding: clamp(12px, 3.5vw, 18px) var(--st-pad-x) 0;
 }
 
 .st-hero {
   display: grid;
   grid-template-columns: 1.45fr 0.95fr;
-  gap: 18px;
+  gap: var(--st-gap);
 }
 
 .st-hero-content,
@@ -979,27 +984,27 @@ svg {
 }
 
 .st-hero-content {
-  padding: 28px;
-  border-radius: 30px;
+  padding: clamp(16px, 4.8vw, 28px);
+  border-radius: var(--st-radius);
 }
 
 .st-pill {
   display: inline-flex;
-  padding: 10px 16px;
+  padding: var(--st-pill-py) var(--st-pill-px);
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.1);
   color: #1d4ed8;
-  font-size: 13px;
+  font-size: clamp(12px, 3.2vw, 13px);
   font-weight: 800;
-  margin-bottom: 18px;
+  margin-bottom: clamp(12px, 3.8vw, 18px);
 }
 
 .st-hero-content h2 {
   margin: 0;
-  font-size: 54px;
+  font-size: clamp(30px, 8.6vw, 54px);
   line-height: 0.95;
   font-weight: 900;
-  letter-spacing: -1.4px;
+  letter-spacing: clamp(-1.4px, -0.25vw, -0.8px);
   max-width: 760px;
 }
 
@@ -1008,21 +1013,21 @@ svg {
 }
 
 .st-hero-content p {
-  margin: 18px 0 0;
+  margin: clamp(12px, 3.8vw, 18px) 0 0;
   max-width: 680px;
-  font-size: 18px;
+  font-size: clamp(15px, 4.2vw, 18px);
   line-height: 1.65;
   color: #4b5563;
 }
 
 .st-search {
-  margin-top: 24px;
+  margin-top: clamp(14px, 4.6vw, 24px);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(10px, 3vw, 12px);
   background: white;
-  border-radius: 24px;
-  padding: 12px 14px;
+  border-radius: clamp(18px, 5vw, 24px);
+  padding: clamp(9px, 2.8vw, 12px) clamp(10px, 3.2vw, 14px);
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
   border: 1px solid transparent;
   transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
@@ -1035,7 +1040,7 @@ svg {
 }
 
 .st-search-icon {
-  font-size: 20px;
+  font-size: clamp(18px, 5vw, 20px);
 }
 
 .st-search input {
@@ -1043,8 +1048,9 @@ svg {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 16px;
+  font-size: clamp(14px, 4vw, 16px);
   color: #111827;
+  min-width: 0;
 }
 
 .st-search input::placeholder {
@@ -1052,9 +1058,9 @@ svg {
 }
 
 .st-search button {
-  min-width: 120px;
-  height: 52px;
-  border-radius: 18px;
+  min-width: clamp(86px, 23vw, 120px);
+  height: clamp(44px, 12.5vw, 52px);
+  border-radius: clamp(14px, 4vw, 18px);
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   font-weight: 800;
@@ -1064,16 +1070,22 @@ svg {
 
 .st-hero-cta-row {
   display: flex;
-  gap: 12px;
-  margin-top: 18px;
+  gap: clamp(10px, 3vw, 12px);
+  margin-top: clamp(12px, 3.8vw, 18px);
   flex-wrap: wrap;
+}
+
+@media (max-width: 380px) {
+  .st-hero-cta-row {
+    flex-direction: column;
+  }
 }
 
 .st-primary-btn,
 .st-secondary-btn {
-  min-height: 52px;
-  padding: 0 20px;
-  border-radius: 18px;
+  min-height: clamp(46px, 12.5vw, 52px);
+  padding: 0 clamp(14px, 4.8vw, 20px);
+  border-radius: clamp(14px, 4vw, 18px);
   font-weight: 800;
 }
 
@@ -1089,12 +1101,12 @@ svg {
 
 .st-hero-side {
   display: grid;
-  gap: 18px;
+  gap: var(--st-gap);
 }
 
 .st-feature-card {
-  border-radius: 28px;
-  padding: 22px;
+  border-radius: var(--st-radius);
+  padding: clamp(16px, 4.2vw, 22px);
 }
 
 .st-feature-dark {
@@ -1105,7 +1117,7 @@ svg {
 .st-feature-tag {
   display: inline-block;
   margin-bottom: 10px;
-  font-size: 12px;
+  font-size: clamp(11px, 3vw, 12px);
   letter-spacing: 0.08em;
   font-weight: 900;
   color: rgba(255, 255, 255, 0.72);
@@ -1113,7 +1125,7 @@ svg {
 
 .st-feature-card h3 {
   margin: 0 0 10px;
-  font-size: 30px;
+  font-size: clamp(22px, 6vw, 30px);
   line-height: 1.05;
 }
 
@@ -1126,16 +1138,16 @@ svg {
 
 .st-feature-dark button {
   margin-top: 16px;
-  min-height: 48px;
-  padding: 0 18px;
-  border-radius: 16px;
+  min-height: clamp(44px, 12vw, 48px);
+  padding: 0 clamp(14px, 4.4vw, 18px);
+  border-radius: clamp(14px, 4vw, 16px);
   font-weight: 900;
   background: white;
   color: #0f172a;
 }
 
 .st-section {
-  margin-top: 26px;
+  margin-top: clamp(18px, 5.2vw, 26px);
 }
 
 .st-section-head {
@@ -1150,21 +1162,21 @@ svg {
   margin: 0 0 4px;
   color: #2563eb;
   font-weight: 900;
-  font-size: 12px;
+  font-size: clamp(11px, 3vw, 12px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .st-section-head h3 {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(20px, 6.2vw, 28px);
   font-weight: 900;
 }
 
 .st-text-btn {
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 14px;
+  min-height: clamp(40px, 11vw, 44px);
+  padding: 0 clamp(12px, 3.8vw, 16px);
+  border-radius: clamp(12px, 3.6vw, 14px);
   background: rgba(255, 255, 255, 0.9);
   color: #111827;
   font-weight: 700;
@@ -1188,10 +1200,10 @@ svg {
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 0 18px;
-  border-radius: 18px;
+  gap: clamp(8px, 2.6vw, 10px);
+  min-height: clamp(42px, 12vw, 48px);
+  padding: 0 clamp(14px, 4.4vw, 18px);
+  border-radius: clamp(14px, 4.4vw, 18px);
   background: rgba(255, 255, 255, 0.96);
   color: #111827;
   font-weight: 800;
@@ -1492,21 +1504,21 @@ svg {
 }
 
 .st-product-info {
-  padding: 16px;
+  padding: clamp(12px, 3.8vw, 16px);
 }
 
 .st-product-category {
   margin: 0 0 6px;
   color: #2563eb;
   font-weight: 900;
-  font-size: 12px;
+  font-size: clamp(11px, 3vw, 12px);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .st-product-info h4 {
   margin: 0 0 12px;
-  font-size: 20px;
+  font-size: clamp(16px, 4.8vw, 20px);
   line-height: 1.25;
 }
 
@@ -1518,13 +1530,13 @@ svg {
 }
 
 .st-product-meta strong {
-  font-size: 24px;
+  font-size: clamp(20px, 6vw, 24px);
   font-weight: 900;
 }
 
 .st-product-meta span {
   color: #6b7280;
-  font-size: 14px;
+  font-size: clamp(12px, 3.6vw, 14px);
 }
 
 .st-empty-state {
@@ -2980,5 +2992,163 @@ h3 {
   }
   100% {
     background-position: -100% 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .view-container {
+    padding: 12px;
+  }
+
+  .st-header {
+    padding: 12px 12px;
+  }
+
+  .st-main {
+    padding: 12px 12px 0;
+  }
+
+  .st-hero-content {
+    padding: 18px 14px;
+  }
+
+  .st-hero-content h2 {
+    font-size: 30px;
+    line-height: 1.02;
+    letter-spacing: -0.8px;
+  }
+
+  .st-hero-content p {
+    font-size: 15px;
+  }
+
+  .st-search {
+    padding: 9px;
+    border-radius: 18px;
+    gap: 10px;
+  }
+
+  .st-search button {
+    min-width: 92px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .st-section-head h3 {
+    font-size: 22px;
+  }
+
+  .st-products-grid {
+    gap: 14px;
+  }
+
+  .st-product-image-wrap img {
+    height: 200px;
+  }
+
+  .st-product-meta strong {
+    font-size: 22px;
+  }
+
+  .st-bottom-nav {
+    bottom: 10px;
+    width: calc(100% - 10px);
+    grid-template-columns: 1fr 1fr 64px 1fr 1fr;
+    padding: 7px;
+    border-radius: 20px;
+  }
+
+  .st-nav-item {
+    min-height: 52px;
+  }
+
+  .st-nav-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    font-size: 30px;
+  }
+
+  .bottom-nav {
+    width: calc(100% - 12px);
+    bottom: 10px;
+    height: calc(62px + env(safe-area-inset-bottom));
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    border-radius: 22px;
+  }
+
+  .nav-item {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+
+  .nav-fab-circle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .chat-composer {
+    width: calc(100% - 10px);
+    grid-template-columns: 42px 1fr 72px;
+    padding: 8px;
+    border-radius: 20px;
+  }
+
+  .chat-composer input {
+    height: 44px;
+    border-radius: 14px;
+    padding: 0 12px;
+  }
+
+  .chat-send-btn {
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .pd-main {
+    padding: 14px 12px 0;
+  }
+
+  .pd-state-card {
+    padding: 18px;
+  }
+
+  .pd-main-image {
+    height: 260px;
+  }
+
+  .pd-info-card {
+    padding: 18px;
+  }
+
+  .pd-info-card h2 {
+    font-size: 26px;
+  }
+
+  .pd-price {
+    font-size: 28px;
+  }
+
+  .pd-actions {
+    gap: 10px;
+  }
+
+  .pd-chat-btn,
+  .pd-buy-btn,
+  .pd-fav-btn {
+    padding: 12px 14px;
+  }
+
+  .ap-root {
+    padding: 0 10px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .ap-sheet {
+    border-radius: 22px;
+    padding: 10px;
+  }
+
+  .ap-actions {
+    grid-template-columns: 1fr;
   }
 }
