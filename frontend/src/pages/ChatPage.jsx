@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Image as ImageIcon, Send, X } from "lucide-react";
+import { Image as ImageIcon, Send, X } from "lucide-react";
 import { getApiUrl, parseJsonResponse, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
@@ -124,6 +124,10 @@ export function ChatDetailPage({ token, user }) {
     setImages((prev) => [...prev, ...files]);
   };
 
+  useEffect(() => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [images.length]);
+
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
@@ -170,94 +174,72 @@ export function ChatDetailPage({ token, user }) {
   const productImg = resolveImageSrc(convData.productImageUrl);
 
   return (
-    <div className="chat-layout" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div className="chat-header" style={{ padding: "15px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", gap: "15px", background: "#fff", position: "sticky", top: 0, zIndex: 10 }}>
-        <div className="back-btn" style={{ position: "static", margin: 0 }} onClick={() => navigate(-1)}>
-          <ChevronLeft />
+    <div className="chat-page">
+      <header className="chat-topbar">
+        <button className="chat-back-btn" onClick={() => navigate(-1)} type="button">
+          ←
+        </button>
+        <div className="chat-header-info">
+          <h1>{convData.productTitle}</h1>
+          <p>Chat con {otherName}</p>
         </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "10px" }}>
-          <div className="placeholder-img" style={{ width: "40px", height: "40px", borderRadius: "8px", backgroundImage: `url(${productImg})`, backgroundSize: "cover" }}></div>
-          <div>
-            <h4 style={{ margin: 0, fontSize: "15px" }}>{convData.productTitle}</h4>
-            <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>{otherName}</p>
-          </div>
-        </div>
-        <div style={{ fontWeight: "bold", color: "#ff5a00" }}>{priceLabel(convData.productPrice)}</div>
-      </div>
+        <button className="chat-more-btn" type="button">
+          ⋯
+        </button>
+      </header>
 
-      <div className="chat-messages" style={{ flex: 1, overflowY: "auto", padding: "15px", display: "flex", flexDirection: "column", gap: "10px", background: "#f8f9fa" }}>
-        {messages.map((msg) => {
-          const isMine = String(msg.senderId) === String(user?.id);
-          return (
-            <div key={msg.id} style={{ alignSelf: isMine ? "flex-end" : "flex-start", maxWidth: "80%" }}>
-              <div style={{ background: isMine ? "#ff5a00" : "#fff", color: isMine ? "#fff" : "#333", padding: "10px 15px", borderRadius: "16px", borderBottomRightRadius: isMine ? "4px" : "16px", borderBottomLeftRadius: isMine ? "16px" : "4px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
-                {msg.text ? <p style={{ margin: 0, wordBreak: "break-word" }}>{msg.text}</p> : null}
-
-                {Array.isArray(msg.images) && msg.images.length > 0 ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: msg.text ? "8px" : "0" }}>
-                    {msg.images.map((img, i) => {
-                      const src = resolveImageSrc(img);
-                      return (
-                        <img
-                          key={i}
-                          src={src}
-                          alt="adjunto"
-                          style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "8px", cursor: "pointer" }}
-                          onClick={() => setPreviewImage(src)}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-              <div style={{ fontSize: "11px", color: "#999", marginTop: "4px", textAlign: isMine ? "right" : "left" }}>
-                {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </div>
+      <main className="chat-main">
+        <div className="chat-product-banner">
+          <div className="chat-product-mini">
+            <img className="chat-product-thumb" src={productImg} alt={convData.productTitle} />
+            <div>
+              <strong>{convData.productTitle}</strong>
+              <p>Precio: {priceLabel(convData.productPrice)}</p>
             </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="chat-input" style={{ padding: "10px", background: "#fff", borderTop: "1px solid #eee", paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
-        {images.length > 0 ? (
-          <div style={{ display: "flex", gap: "10px", marginBottom: "10px", overflowX: "auto", paddingBottom: "5px" }}>
-            {images.map((file, i) => (
-              <div key={i} style={{ position: "relative", width: "60px", height: "60px", flexShrink: 0 }}>
-                <img src={URL.createObjectURL(file)} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "8px" }} />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  style={{ position: "absolute", top: "-5px", right: "-5px", background: "#ff3333", color: "white", border: "none", borderRadius: "50%", width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
           </div>
-        ) : null}
-        <form onSubmit={handleSend} style={{ display: "flex", alignItems: "flex-end", gap: "10px" }}>
-          <input type="file" multiple accept="image/jpeg,image/png,image/webp" ref={fileInputRef} style={{ display: "none" }} onChange={handleImageSelect} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "none", padding: "10px", color: "#666", cursor: "pointer" }}>
-            <ImageIcon size={24} />
-          </button>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Escribe un mensaje..."
-            style={{ flex: 1, border: "1px solid #ddd", borderRadius: "20px", padding: "10px 15px", resize: "none", outline: "none", fontFamily: "inherit", fontSize: "15px", maxHeight: "100px" }}
-            rows={1}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend(e);
-              }
-            }}
-          />
-          <button type="submit" disabled={sending || (!text.trim() && images.length === 0)} style={{ background: "#ff5a00", color: "white", border: "none", borderRadius: "50%", width: "44px", height: "44px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: sending || (!text.trim() && images.length === 0) ? 0.5 : 1 }}>
-            <Send size={20} style={{ marginLeft: "-2px" }} />
-          </button>
-        </form>
+        </div>
+
+        <div className="chat-messages">
+          {messages.map((message) => {
+            const mine = String(message.senderId) === String(user?.id);
+            return (
+              <div key={message.id} className={`chat-bubble-row ${mine ? "mine" : "other"}`}>
+                <div className={`chat-bubble ${mine ? "mine" : "other"}`}>
+                  {message.text ? <p>{message.text}</p> : null}
+                  {Array.isArray(message.images) && message.images.length > 0 ? (
+                    <div className="chat-images">
+                      {message.images.map((img, i) => {
+                        const src = resolveImageSrc(img);
+                        return <img key={i} src={src} alt="adjunto" onClick={() => setPreviewImage(src)} />;
+                      })}
+                    </div>
+                  ) : null}
+                  <span>{new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
+
+      <div className="chat-composer">
+        <input type="file" multiple accept="image/jpeg,image/png,image/webp" ref={fileInputRef} style={{ display: "none" }} onChange={handleImageSelect} />
+        <button className="chat-attach-btn" type="button" onClick={() => fileInputRef.current?.click()}>
+          <ImageIcon size={18} />
+        </button>
+        <input
+          type="text"
+          placeholder="Escribe un mensaje..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSend(e);
+          }}
+        />
+        <button className="chat-send-btn" onClick={handleSend} disabled={sending || (!text.trim() && images.length === 0)} type="button">
+          <Send size={18} />
+        </button>
       </div>
 
       {previewImage ? (
