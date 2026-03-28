@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import AppLogo from "../components/AppLogo.jsx";
 import { createOrGetConversation, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
@@ -114,24 +115,16 @@ export default function HomePage({ products, search, setSearch, categories, acti
 
       <motion.header className="st-header" variants={reveal} initial="hidden" animate="show">
         <div className="st-brand">
-          <div className="st-logo-box">M</div>
+          <div className="st-logo-box">
+            <AppLogo className="st-logo-img" alt="MAQUETI" />
+          </div>
           <div>
             <p className="st-brand-kicker">Marketplace urbano</p>
             <h1>MAQUETI</h1>
           </div>
         </div>
 
-        <div className="st-header-actions">
-          <button className="st-icon-btn" type="button" aria-label="Perfil" onClick={() => (token ? navigate("/store") : onRequireAuth?.())}>
-            👤
-          </button>
-          <button className="st-icon-btn" type="button" aria-label="Notificaciones" onClick={() => alert("Notificaciones: próximamente")}>
-            🔔
-          </button>
-          <button className="st-icon-btn" type="button" aria-label="Chat" onClick={() => (token ? navigate("/chats") : onRequireAuth?.())}>
-            💬
-          </button>
-        </div>
+
       </motion.header>
 
       <motion.main className="st-main" variants={stagger} initial="hidden" animate="show">

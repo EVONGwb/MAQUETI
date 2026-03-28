@@ -3,3 +3,5 @@ storage/maqueti.db
 .env 
 .DS_Store 
 frontend/dist/ 
+.vercel
+.env*.local

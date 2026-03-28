@@ -1,4 +1,4 @@
-const CACHE = "maqueti-pwa-v1";
+const CACHE = "maqueti-pwa-v2";
 
 const isCacheable = (url) => {
   if (url.origin !== self.location.origin) return false;
@@ -11,7 +11,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      await cache.addAll(["/", "/manifest.webmanifest", "/pwa-192.svg", "/pwa-512.svg"]);
+      await cache.addAll(["/", "/manifest.webmanifest", "/pwa-192.png", "/pwa-512.png"]);
       await self.skipWaiting();
     })()
   );
@@ -57,7 +57,15 @@ self.addEventListener("fetch", (event) => {
       if (cached) return cached;
 
       const fresh = await fetch(req);
-      if (fresh.ok && (url.pathname.startsWith("/assets/") || url.pathname.endsWith(".css") || url.pathname.endsWith(".js") || url.pathname.endsWith(".svg"))) {
+      if (
+        fresh.ok &&
+        (url.pathname.startsWith("/assets/") ||
+          url.pathname.endsWith(".css") ||
+          url.pathname.endsWith(".js") ||
+          url.pathname.endsWith(".svg") ||
+          url.pathname.endsWith(".png") ||
+          url.pathname.endsWith(".webmanifest"))
+      ) {
         const cache = await caches.open(CACHE);
         cache.put(req, fresh.clone());
       }
@@ -65,4 +73,3 @@ self.addEventListener("fetch", (event) => {
     })()
   );
 });
-

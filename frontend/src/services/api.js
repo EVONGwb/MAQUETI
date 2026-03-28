@@ -92,6 +92,16 @@ export const updateProduct = async (id, token, payload) => {
   return data;
 };
 
+export const deleteProduct = async (id, token) => {
+  const res = await fetch(`${getApiUrl()}/api/products/${id}`, {
+    method: "DELETE",
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error eliminando producto: ${res.status}`);
+  return data;
+};
+
 export const createOrGetConversation = async (productId, token) => {
   const res = await fetch(`${getApiUrl()}/api/conversations`, {
     method: "POST",

@@ -101,7 +101,9 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
             </section>
 
             <section className="pd-info-card">
-              <p className="pd-category">{product.category || "General"}</p>
+              <p className="pd-category">
+                {product.category ? (product.subcategory ? `${product.category} > ${product.subcategory}` : product.category) : "General"}
+              </p>
               <h2>{product.title}</h2>
               <div className="pd-price">{priceLabel(product.price)}</div>
 

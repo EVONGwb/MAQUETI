@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GoogleLogin } from "@react-oauth/google";
+import AppLogo from "./AppLogo.jsx";
 
 export default function AuthPrompt({
   open,
@@ -92,7 +93,7 @@ export default function AuthPrompt({
             <div className="ap-handle" />
             <div className="ap-top">
               <div className="ap-icon" aria-hidden="true">
-                🔒
+                <AppLogo className="ap-logo-img" alt="MAQUETI" />
               </div>
               <div className="ap-copy">
                 <h3 className="ap-title">{title || "Necesitas una cuenta"}</h3>

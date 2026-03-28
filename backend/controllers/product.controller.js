@@ -64,7 +64,7 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
-    const { title, price, description, condition, category, location, imageUrl, stock, sku, status } = req.body;
+    const { title, price, description, condition, category, subcategory, location, imageUrl, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -104,6 +104,7 @@ const createProduct = async (req, res) => {
       description: description || null,
       condition: condition || "Como nuevo",
       category: category || "Otros",
+      subcategory: subcategory || null,
       location: location || null,
       imageUrl: finalImageUrl,
       stock: safeStock,
@@ -122,6 +123,7 @@ const createProduct = async (req, res) => {
         description: description || null,
         condition: condition || "Como nuevo",
         category: category || "Otros",
+        subcategory: subcategory || null,
         location: location || null,
         imageUrl: finalImageUrl,
         stock: safeStock,
@@ -138,7 +140,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, price, description, condition, category, location, imageUrl, stock, sku, status } = req.body;
+    const { title, price, description, condition, category, subcategory, location, imageUrl, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -159,6 +161,7 @@ const updateProduct = async (req, res) => {
     const updatedDescription = description !== undefined ? description : row.description;
     const updatedCondition = condition !== undefined ? condition : row.condition;
     const updatedCategory = category !== undefined ? category : row.category;
+    const updatedSubcategory = subcategory !== undefined ? (subcategory ? subcategory : null) : row.subcategory || null;
     const updatedLocation = location !== undefined ? location : row.location;
     const updatedImageUrl = imageUrl !== undefined ? imageUrl : row.imageUrl;
     const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock;
@@ -178,6 +181,7 @@ const updateProduct = async (req, res) => {
           description: updatedDescription,
           condition: updatedCondition,
           category: updatedCategory,
+          subcategory: updatedSubcategory,
           location: updatedLocation,
           imageUrl: updatedImageUrl,
           stock: updatedStock,
@@ -197,6 +201,7 @@ const updateProduct = async (req, res) => {
         description: updatedDescription,
         condition: updatedCondition,
         category: updatedCategory,
+        subcategory: updatedSubcategory,
         location: updatedLocation,
         imageUrl: updatedImageUrl,
         stock: updatedStock,

@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: null },
     condition: { type: String, default: "Como nuevo" },
     category: { type: String, default: "Otros" },
+    subcategory: { type: String, default: null },
     location: { type: String, default: null },
     imageUrl: { type: String, default: null },
     stock: { type: Number, default: null },

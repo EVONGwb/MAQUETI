@@ -10,6 +10,7 @@ import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
 import AuthPrompt from "./src/components/AuthPrompt";
 import InstallPrompt from "./src/components/InstallPrompt";
+import CategorySelector from "./src/components/CategorySelector";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
 import ProfilePage from "./src/pages/Profile";
@@ -836,6 +837,7 @@ const AddProductView = ({ token, onCreated }) => {
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
   const [category, setCategory] = useState("Otros");
+  const [subcategory, setSubcategory] = useState("");
   const [condition, setCondition] = useState("Como nuevo");
   const [location, setLocation] = useState("");
   const [sku, setSku] = useState("");
@@ -911,6 +913,7 @@ const AddProductView = ({ token, onCreated }) => {
           description: description || null,
           stock: stock === "" ? null : Number(stock),
           category,
+          subcategory: subcategory || null,
           condition,
           location: location || null,
           sku: sku || null,
@@ -932,6 +935,7 @@ const AddProductView = ({ token, onCreated }) => {
       setDescription("");
       setStock("");
       setCategory("Otros");
+      setSubcategory("");
       setCondition("Como nuevo");
       setLocation("");
       setSku("");
@@ -960,7 +964,13 @@ const AddProductView = ({ token, onCreated }) => {
           <input type="text" placeholder="SKU (Opcional)" value={sku} onChange={(e) => setSku(e.target.value)} />
         </div>
         <div className="row-inputs">
-          <input type="text" placeholder="Categoría" value={category} onChange={(e) => setCategory(e.target.value)} />
+          <CategorySelector
+            value={{ category, subcategory }}
+            onChange={({ category: c, subcategory: s }) => {
+              setCategory(c || "Otros");
+              setSubcategory(s || "");
+            }}
+          />
           <input type="text" placeholder="Condición" value={condition} onChange={(e) => setCondition(e.target.value)} />
         </div>
         <input type="text" placeholder="Ubicación (opcional)" value={location} onChange={(e) => setLocation(e.target.value)} />
@@ -1260,7 +1270,7 @@ function App() {
             path="/profile"
             element={
               isLogged ? (
-                <ProfilePage user={user} myProducts={myProducts} onLogout={handleLogout} onRegisterPasskey={handleRegisterPasskey} passkeyMessage={passkeyMessage} />
+                <ProfilePage user={user} myProducts={myProducts} token={token} refreshData={refreshData} onLogout={handleLogout} onRegisterPasskey={handleRegisterPasskey} passkeyMessage={passkeyMessage} />
               ) : (
                 <AuthRequiredView title="Perfil" message="Regístrate o inicia sesión para acceder a tu perfil." onLogin={() => openAuth("Regístrate o inicia sesión para acceder a tu perfil.")} />
               )
