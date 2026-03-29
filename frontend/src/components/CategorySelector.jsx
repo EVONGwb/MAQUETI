@@ -109,6 +109,13 @@ const writeRecents = (items) => {
   }
 };
 
+const topSubcategories = (categoryName) => {
+  const node = CATEGORY_TREE.find((c) => c.name === categoryName);
+  if (!node) return [];
+  const list = Array.isArray(node.subcategories) ? node.subcategories : [];
+  return list.filter((s) => s && s !== "Otros").slice(0, 6);
+};
+
 export default function CategorySelector({ value, onChange, placeholder = "Categoría" }) {
   const rawCategory = String(value?.category || "").trim();
   const rawSub = String(value?.subcategory || "").trim();
@@ -197,6 +204,12 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
     setRecent(nextRecents.slice(0, 8));
     writeRecents(nextRecents);
     onChange?.({ category: selectedCategory, subcategory: sub });
+    close();
+  };
+
+  const pickCategoryOnly = () => {
+    vibrate(10);
+    onChange?.({ category: selectedCategory, subcategory: "" });
     close();
   };
 
@@ -340,6 +353,29 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
                     </motion.div>
                   ) : (
                     <motion.div key="step2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.16 }}>
+                      {query ? null : (
+                        <div className="cat-section">
+                          <div className="cat-section-title">Top subcategorías</div>
+                          <div className="cat-chips">
+                            {topSubcategories(selectedCategory).map((s) => (
+                              <button key={`top_${selectedCategory}_${s}`} className="cat-chip one" type="button" onClick={() => pickSubcategory(s)}>
+                                <span className="cat-chip-top">{s}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="cat-section">
+                        <div className="cat-section-title">Rápido</div>
+                        <div className="cat-chips">
+                          <button className="cat-chip one cat-chip-primary" type="button" onClick={pickCategoryOnly}>
+                            <span className="cat-chip-top">Sin subcategoría</span>
+                            <span className="cat-chip-bottom">{selectedCategory}</span>
+                          </button>
+                        </div>
+                      </div>
+
                       <div className="cat-subgrid">
                         {filteredSubcategories.map((s) => {
                           const active = currentSub === s && currentCategory === selectedCategory;

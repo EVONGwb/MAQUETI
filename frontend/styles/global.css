@@ -3032,6 +3032,15 @@ h3 {
   min-width: auto;
 }
 
+.cat-chip-primary {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.cat-chip-primary .cat-chip-top {
+  color: #1d4ed8;
+}
+
 .cat-chip:active {
   transform: scale(0.99);
 }
