@@ -147,7 +147,10 @@ export default function HomePage({ products, search, setSearch, categories, acti
             </div>
 
             <div className="st-hero-cta-row">
-              <button className="st-primary-btn" type="button" onClick={() => navigate("/explore")}>
+              <button className="st-primary-btn" type="button" onClick={() => (token ? navigate("/add") : onRequireAuth?.())}>
+                Publicar producto
+              </button>
+              <button className="st-secondary-btn" type="button" onClick={() => navigate("/explore")}>
                 Explorar productos
               </button>
               <button className="st-secondary-btn" type="button" onClick={() => (token ? navigate("/store") : onRequireAuth?.())}>

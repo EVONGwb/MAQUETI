@@ -6,6 +6,7 @@ export default function BottomNav({ isLogged, openAuth }) {
   const location = useLocation();
   const navigate = useNavigate();
   const activePath = location.pathname;
+  const isPostActive = activePath === "/add";
 
   return (
     <nav className="bottom-nav">
@@ -20,14 +21,15 @@ export default function BottomNav({ isLogged, openAuth }) {
       </button>
 
       <button
-        className="nav-item nav-fab"
+        className={`nav-item nav-fab ${isPostActive ? "active" : ""}`}
         type="button"
         aria-label="Publicar"
         onClick={() => (isLogged ? navigate("/add") : openAuth("Regístrate o inicia sesión para publicar productos."))}
       >
         <div className="nav-fab-circle">
-          <Plus size={22} />
+          <Plus size={24} />
         </div>
+        <span className="nav-fab-label">Publicar</span>
       </button>
 
       <button className={`nav-item ${activePath.startsWith("/chats") ? "active" : ""}`} type="button" onClick={() => (isLogged ? navigate("/chats") : openAuth("Regístrate o inicia sesión para chatear."))}>

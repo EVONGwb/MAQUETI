@@ -339,6 +339,14 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
         <input value={search} onChange={(e) => setSearch(e.target.value)} type="text" placeholder="Buscar en todo el catálogo..." />
       </div>
 
+      <button className="explore-post-cta" type="button" onClick={() => navigate("/add")}>
+        <span className="explore-post-cta-left">
+          <span className="explore-post-cta-icon">＋</span>
+          Publicar producto
+        </span>
+        <span className="explore-post-cta-right">Gratis</span>
+      </button>
+
       <div className="categories" style={{ marginBottom: '20px' }}>
         <button className={`cat-chip ${activeCategory ? "" : "active"}`} type="button" onClick={() => setActiveCategory("")}>
           Todos
@@ -1014,7 +1022,8 @@ const AddProductView = ({ token, onCreated }) => {
       setCustomCity("");
       setSku("");
       removeAllImages();
-      onCreated();
+      await Promise.resolve(onCreated?.());
+      navigate("/profile");
     } catch (err) {
       setMessage(err?.message || "Error al crear producto");
     } finally {
