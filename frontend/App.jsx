@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
-import { Home, Search, PlusSquare, User, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
+import { Home, Search, PlusSquare, User, Package, Store as StoreIcon, LogOut, Fingerprint, RefreshCcw, ChevronLeft, ChevronRight, Star, Heart, MessageCircle, Send, Image as ImageIcon, X } from "lucide-react";
 import HomePage from "./src/pages/Home";
 import HomeUnicornReal from "./src/pages/HomeUnicornReal";
 import ProductDetailPage from "./src/pages/ProductDetail";
@@ -886,6 +886,28 @@ const AddProductView = ({ token, onCreated }) => {
     });
   };
 
+  const moveImage = (from, to) => {
+    setImages((prev) => {
+      if (from === to) return prev;
+      if (from < 0 || from >= prev.length) return prev;
+      if (to < 0 || to >= prev.length) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  };
+
+  const makePrimary = (index) => {
+    setImages((prev) => {
+      if (index <= 0 || index >= prev.length) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
+  };
+
   const removeAllImages = () => {
     setImages((prev) => {
       for (const item of prev) {
@@ -1096,9 +1118,21 @@ const AddProductView = ({ token, onCreated }) => {
           <div className="post-photos">
             {images.map((img, idx) => (
               <div key={img.preview} className="post-photo-item" style={{ backgroundImage: `url(${img.preview})` }}>
+                {idx === 0 ? <div className="post-photo-badge">Principal</div> : null}
                 <button className="post-photo-remove" type="button" onClick={() => removeImageAt(idx)} aria-label="Quitar foto">
                   <X size={16} />
                 </button>
+                <div className="post-photo-actions">
+                  <button className="post-photo-action-btn" type="button" onClick={() => makePrimary(idx)} aria-label="Hacer principal" disabled={idx === 0}>
+                    <Star size={16} />
+                  </button>
+                  <button className="post-photo-action-btn" type="button" onClick={() => moveImage(idx, idx - 1)} aria-label="Mover a la izquierda" disabled={idx === 0}>
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button className="post-photo-action-btn" type="button" onClick={() => moveImage(idx, idx + 1)} aria-label="Mover a la derecha" disabled={idx === images.length - 1}>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
             ))}
 
