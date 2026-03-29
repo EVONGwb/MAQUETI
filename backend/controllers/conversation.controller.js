@@ -22,10 +22,11 @@ const enrichConversations = async (conversations) => {
     const p = productsById.get(String(c.productId)) || null;
     const b = usersById.get(String(c.buyerId)) || null;
     const s = usersById.get(String(c.sellerId)) || null;
+    const firstImage = Array.isArray(p?.imageUrls) && p.imageUrls.length ? p.imageUrls[0] : p?.imageUrl;
     return {
       ...c,
       productTitle: p?.title,
-      productImageUrl: p?.imageUrl,
+      productImageUrl: firstImage,
       productPrice: p?.price,
       buyerName: b?.name,
       buyerEmail: b?.email,

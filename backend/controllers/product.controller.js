@@ -64,7 +64,7 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
-    const { title, price, description, condition, category, subcategory, location, imageUrl, stock, sku, status } = req.body;
+    const { title, price, description, condition, category, subcategory, location, imageUrl, imageUrls, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -94,7 +94,11 @@ const createProduct = async (req, res) => {
     const id = generateNumericId();
     const createdAt = Date.now();
     const safeStock = stock === undefined || stock === null || stock === "" ? null : Number(stock);
-    const finalImageUrl = imageUrl || "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
+    const urls = Array.isArray(imageUrls) ? imageUrls.filter((u) => typeof u === "string" && u.trim()).slice(0, 5) : [];
+    const safeImageUrl = typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : "";
+    const defaultImage = "https://res.cloudinary.com/demo/image/upload/v1615545305/docs/shoes.jpg";
+    const finalImageUrl = urls[0] || safeImageUrl || defaultImage;
+    const finalImageUrls = urls.length ? urls : safeImageUrl ? [safeImageUrl] : [];
     const finalStatus = storeActive ? normalizeStatus(status, "published") : "published";
     await Product.create({
       id,
@@ -107,6 +111,7 @@ const createProduct = async (req, res) => {
       subcategory: subcategory || null,
       location: location || null,
       imageUrl: finalImageUrl,
+      imageUrls: finalImageUrls,
       stock: safeStock,
       sku: sku || null,
       status: finalStatus,
@@ -126,6 +131,7 @@ const createProduct = async (req, res) => {
         subcategory: subcategory || null,
         location: location || null,
         imageUrl: finalImageUrl,
+        imageUrls: finalImageUrls,
         stock: safeStock,
         sku: sku || null,
         status: finalStatus,
@@ -140,7 +146,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, price, description, condition, category, subcategory, location, imageUrl, stock, sku, status } = req.body;
+    const { title, price, description, condition, category, subcategory, location, imageUrl, imageUrls, stock, sku, status } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -163,7 +169,20 @@ const updateProduct = async (req, res) => {
     const updatedCategory = category !== undefined ? category : row.category;
     const updatedSubcategory = subcategory !== undefined ? (subcategory ? subcategory : null) : row.subcategory || null;
     const updatedLocation = location !== undefined ? location : row.location;
-    const updatedImageUrl = imageUrl !== undefined ? imageUrl : row.imageUrl;
+    const updatedImageUrls =
+      imageUrls !== undefined
+        ? Array.isArray(imageUrls)
+          ? imageUrls.filter((u) => typeof u === "string" && u.trim()).slice(0, 5)
+          : []
+        : Array.isArray(row.imageUrls)
+          ? row.imageUrls
+          : [];
+    const updatedImageUrl =
+      imageUrl !== undefined
+        ? imageUrl
+        : updatedImageUrls.length
+          ? updatedImageUrls[0]
+          : row.imageUrl;
     const updatedStock = stock !== undefined ? (stock === null || stock === "" ? null : Number(stock)) : row.stock;
     const updatedSku = sku !== undefined ? sku : row.sku;
     const storeActive = await isStoreActive(userId);
@@ -184,6 +203,7 @@ const updateProduct = async (req, res) => {
           subcategory: updatedSubcategory,
           location: updatedLocation,
           imageUrl: updatedImageUrl,
+          imageUrls: updatedImageUrls,
           stock: updatedStock,
           sku: updatedSku,
           status: updatedStatus,
@@ -204,6 +224,7 @@ const updateProduct = async (req, res) => {
         subcategory: updatedSubcategory,
         location: updatedLocation,
         imageUrl: updatedImageUrl,
+        imageUrls: updatedImageUrls,
         stock: updatedStock,
         sku: updatedSku,
         status: updatedStatus,

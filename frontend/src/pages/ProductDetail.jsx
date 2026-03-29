@@ -11,6 +11,7 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
   const [loading, setLoading] = useState(!productFromList);
   const [error, setError] = useState("");
   const [contactMessage, setContactMessage] = useState("");
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
     if (productFromList) {
@@ -42,6 +43,18 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
   }, [id, productFromList]);
 
   const isFav = product ? favorites.includes(product.id) : false;
+  const images = useMemo(() => {
+    if (!product) return [];
+    const arr = Array.isArray(product.imageUrls) ? product.imageUrls : [];
+    const list = arr.filter((u) => typeof u === "string" && u.trim());
+    if (list.length) return list;
+    if (product.imageUrl) return [product.imageUrl];
+    return [];
+  }, [product]);
+
+  useEffect(() => {
+    setActiveImage(0);
+  }, [product?.id]);
 
   const handleContactSeller = async () => {
     setContactMessage("");
@@ -97,7 +110,21 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
         ) : product ? (
           <div className="pd-grid">
             <section className="pd-gallery-card">
-              <img src={resolveImageSrc(product.imageUrl)} alt={product.title} className="pd-main-image" />
+              <img src={resolveImageSrc(images[activeImage] || product.imageUrl)} alt={product.title} className="pd-main-image" />
+              {images.length > 1 ? (
+                <div className="pd-thumbs" role="list">
+                  {images.map((src, idx) => (
+                    <button
+                      key={`${src}_${idx}`}
+                      className={`pd-thumb ${idx === activeImage ? "active" : ""}`}
+                      type="button"
+                      onClick={() => setActiveImage(idx)}
+                      style={{ backgroundImage: `url(${resolveImageSrc(src)})` }}
+                      aria-label={`Foto ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </section>
 
             <section className="pd-info-card">

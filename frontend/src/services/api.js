@@ -21,9 +21,11 @@ export const parseJsonResponse = async (res) => {
 };
 
 export const resolveImageSrc = (imageUrl) => {
-  if (!imageUrl || typeof imageUrl !== "string") return "https://via.placeholder.com/600x400?text=MAQUETI";
-  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl;
-  return `${getApiUrl()}${imageUrl}`;
+  const url =
+    Array.isArray(imageUrl) ? (typeof imageUrl[0] === "string" ? imageUrl[0] : "") : typeof imageUrl === "string" ? imageUrl : "";
+  if (!url) return "https://via.placeholder.com/600x400?text=MAQUETI";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${getApiUrl()}${url}`;
 };
 
 export const fetchProducts = async () => {

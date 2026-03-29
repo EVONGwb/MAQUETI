@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema(
     subcategory: { type: String, default: null },
     location: { type: String, default: null },
     imageUrl: { type: String, default: null },
+    imageUrls: { type: [String], default: [] },
     stock: { type: Number, default: null },
     sku: { type: String, default: null },
     status: { type: String, default: "published", index: true },

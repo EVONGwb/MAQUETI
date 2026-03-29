@@ -2908,6 +2908,65 @@ h3 {
   border-radius: 12px;
 }
 
+.post-photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.post-photo-item {
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.post-photo-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(2, 6, 23, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.post-photo-add {
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  border: 2px dashed rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.02);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.post-photo-add input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.post-photo-add-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  color: rgba(15, 23, 42, 0.62);
+}
+
 .post-photo {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -3926,6 +3985,36 @@ h3 {
   height: clamp(280px, 130vw, 560px);
   object-fit: cover;
   display: block;
+}
+
+.pd-thumbs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 64px;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 12px 2px 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pd-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.pd-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.pd-thumb.active {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.18);
 }
 
 .pd-info-card {

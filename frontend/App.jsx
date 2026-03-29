@@ -10,7 +10,6 @@ import { ChatListPage, ChatDetailPage } from "./src/pages/ChatPage";
 import BottomNav from "./src/components/BottomNav";
 import AuthPrompt from "./src/components/AuthPrompt";
 import InstallPrompt from "./src/components/InstallPrompt";
-import CategorySelector from "./src/components/CategorySelector";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
 import ProfilePage from "./src/pages/Profile";
@@ -840,11 +839,11 @@ const AddProductView = ({ token, onCreated }) => {
   const [subcategory, setSubcategory] = useState("");
   const [condition, setCondition] = useState("Como nuevo");
   const [customCondition, setCustomCondition] = useState("");
-  const [location, setLocation] = useState("");
+  const [city, setCity] = useState("");
+  const [customCity, setCustomCity] = useState("");
   const [sku, setSku] = useState("");
   const [message, setMessage] = useState("");
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [limitInfo, setLimitInfo] = useState(null);
   const [touched, setTouched] = useState({ title: false, price: false });
@@ -854,18 +853,52 @@ const AddProductView = ({ token, onCreated }) => {
   const CLOUDINARY_UPLOAD_PRESET = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "").trim();
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setImages((prev) => {
+      const next = [...prev];
+      for (const file of files) {
+        if (next.length >= 5) break;
+        if (!file) continue;
+        const preview = URL.createObjectURL(file);
+        next.push({ file, preview });
+      }
+      return next;
+    });
+
+    e.target.value = "";
   };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview("");
+  const removeImageAt = (index) => {
+    setImages((prev) => {
+      const next = prev.slice();
+      const item = next[index];
+      if (item?.preview) {
+        try {
+          URL.revokeObjectURL(item.preview);
+        } catch {
+          undefined;
+        }
+      }
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const removeAllImages = () => {
+    setImages((prev) => {
+      for (const item of prev) {
+        if (item?.preview) {
+          try {
+            URL.revokeObjectURL(item.preview);
+          } catch {
+            undefined;
+          }
+        }
+      }
+      return [];
+    });
   };
 
   const uploadImageToCloudinary = async (file) => {
@@ -902,17 +935,18 @@ const AddProductView = ({ token, onCreated }) => {
       const cleanTitle = String(title || "").trim();
       const priceValue = Number(String(price || "").replace(",", "."));
       const finalCondition = condition === "Otro" ? String(customCondition || "").trim() : String(condition || "").trim();
+      const finalLocation = city === "Otra" ? String(customCity || "").trim() : String(city || "").trim();
 
       if (cleanTitle.length < 3) throw new Error("Pon un título más claro (mínimo 3 caracteres).");
       if (!Number.isFinite(priceValue) || priceValue <= 0) throw new Error("Pon un precio válido.");
       if (!finalCondition) throw new Error("Selecciona una condición.");
 
-      let uploadedUrl = "";
-      if (imageFile) {
-        uploadedUrl = await uploadImageToCloudinary(imageFile);
-      }
-      if (imageFile && !uploadedUrl) {
-        throw new Error("No se pudo subir la imagen");
+      const filesToUpload = images.map((x) => x?.file).filter(Boolean).slice(0, 5);
+      const uploadedUrls = [];
+      for (const file of filesToUpload) {
+        const url = await uploadImageToCloudinary(file);
+        if (!url) throw new Error("No se pudo subir la imagen");
+        uploadedUrls.push(url);
       }
 
       const apiUrl = getApiUrl();
@@ -930,9 +964,10 @@ const AddProductView = ({ token, onCreated }) => {
           category,
           subcategory: subcategory || null,
           condition: finalCondition,
-          location: location || null,
+          location: finalLocation || null,
           sku: sku || null,
-          imageUrl: uploadedUrl || null
+          imageUrl: uploadedUrls[0] || null,
+          imageUrls: uploadedUrls.length ? uploadedUrls : null
         }),
       });
       
@@ -953,10 +988,10 @@ const AddProductView = ({ token, onCreated }) => {
       setSubcategory("");
       setCondition("Como nuevo");
       setCustomCondition("");
-      setLocation("");
+      setCity("");
+      setCustomCity("");
       setSku("");
-      setImageFile(null);
-      setImagePreview("");
+      removeAllImages();
       onCreated();
     } catch (err) {
       setMessage(err?.message || "Error al crear producto");
@@ -971,6 +1006,37 @@ const AddProductView = ({ token, onCreated }) => {
   const cleanTitle = String(title || "").trim();
   const cleanDescription = String(description || "");
   const catLabel = subcategory ? `${category} > ${subcategory}` : category;
+  const previewImage = images[0]?.preview || "";
+  const categories = [
+    "Tecnología",
+    "Moda",
+    "Hogar",
+    "Motor",
+    "Gaming",
+    "Deporte",
+    "Belleza",
+    "Coleccionismo",
+    "Niños",
+    "Mascotas",
+    "Servicios",
+    "Otros",
+  ];
+  const subcategoryMap = {
+    Tecnología: ["Móviles", "Ordenadores", "Consolas", "Audio", "TV y vídeo", "Accesorios", "Wearables", "Componentes", "Otros"],
+    Moda: ["Hombre", "Mujer", "Niños", "Zapatos", "Bolsos", "Relojes", "Accesorios", "Otros"],
+    Hogar: ["Muebles", "Decoración", "Cocina", "Electrodomésticos", "Jardín", "Limpieza", "Iluminación", "Otros"],
+    Motor: ["Coches", "Motos", "Recambios", "Accesorios", "Neumáticos", "Herramientas", "Otros"],
+    Gaming: ["Consolas", "Juegos", "PC Gaming", "Mandos", "Accesorios", "Coleccionables", "Otros"],
+    Deporte: ["Fitness", "Fútbol", "Running", "Ciclismo", "Outdoor", "Natación", "Otros"],
+    Belleza: ["Perfumes", "Maquillaje", "Cuidado facial", "Cuidado capilar", "Cuidado corporal", "Otros"],
+    Coleccionismo: ["Trading Cards", "Figuras", "Vintage", "Comics", "Arte", "Monedas", "Otros"],
+    Niños: ["Ropa", "Juguetes", "Carritos", "Sillas", "Higiene", "Otros"],
+    Mascotas: ["Accesorios", "Alimentación", "Higiene", "Transportines", "Otros"],
+    Servicios: ["Reparaciones", "Mudanzas", "Clases", "Eventos", "Otros"],
+    Otros: ["General"],
+  };
+  const subOptions = subcategoryMap[category] || [];
+  const cities = ["Malabo", "Bata", "Ebebiyín", "Mongomo", "Evinayong", "Niefang", "Añisok", "Aconibe", "Micomiseng", "Mbini", "Kogo", "Luba", "Baney", "Riaba", "Otra"];
   const titleError = touched.title && String(title || "").trim().length < 3 ? "Mínimo 3 caracteres" : "";
   const priceValue = Number(String(price || "").replace(",", "."));
   const priceError = touched.price && (!Number.isFinite(priceValue) || priceValue <= 0) ? "Precio inválido" : "";
@@ -986,8 +1052,8 @@ const AddProductView = ({ token, onCreated }) => {
       </div>
 
       <div className="post-preview">
-        <div className="post-preview-media" style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}>
-          {!imagePreview ? (
+        <div className="post-preview-media" style={previewImage ? { backgroundImage: `url(${previewImage})` } : {}}>
+          {!previewImage ? (
             <div className="post-preview-empty">
               <ImageIcon size={18} />
               Vista previa
@@ -1019,26 +1085,34 @@ const AddProductView = ({ token, onCreated }) => {
       <form className="post-form" onSubmit={handleCreate}>
         <div className="post-card">
           <div className="post-card-head">
-            <div className="post-card-title">Foto</div>
-            {imagePreview ? (
-              <button className="post-link" type="button" onClick={removeImage}>
-                Quitar
+            <div className="post-card-title">{`Fotos (${images.length}/5)`}</div>
+            {images.length ? (
+              <button className="post-link" type="button" onClick={removeAllImages}>
+                Quitar todas
               </button>
             ) : null}
           </div>
 
-          <label
-            className={`post-photo ${imagePreview ? "has" : ""}`}
-            style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
-          >
-            {!imagePreview ? (
-              <span className="post-photo-empty">
-                <ImageIcon size={20} />
-                Añadir foto
-              </span>
+          <div className="post-photos">
+            {images.map((img, idx) => (
+              <div key={img.preview} className="post-photo-item" style={{ backgroundImage: `url(${img.preview})` }}>
+                <button className="post-photo-remove" type="button" onClick={() => removeImageAt(idx)} aria-label="Quitar foto">
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+
+            {images.length < 5 ? (
+              <label className="post-photo-add">
+                <span className="post-photo-add-inner">
+                  <ImageIcon size={20} />
+                  Añadir
+                </span>
+                <input type="file" multiple accept="image/*" capture="environment" onChange={handleImageChange} />
+              </label>
             ) : null}
-            <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} />
-          </label>
+          </div>
+          <div className="post-hint">Hasta 5 fotos</div>
         </div>
 
         <div className="post-card">
@@ -1099,18 +1173,44 @@ const AddProductView = ({ token, onCreated }) => {
             <div className="post-grid2">
               <div className="post-field">
                 <div className="post-label">Categoría</div>
-                <CategorySelector
-                  value={{ category, subcategory }}
-                  onChange={({ category: c, subcategory: s }) => {
-                    setCategory(c || "Otros");
-                    setSubcategory(s || "");
+                <select
+                  className="post-input"
+                  value={category}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setCategory(next || "Otros");
+                    setSubcategory("");
                   }}
-                />
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <select className="post-input" value={subcategory} onChange={(e) => setSubcategory(e.target.value)} aria-label="Subcategoría">
+                  <option value="">Sin subcategoría</option>
+                  {subOptions.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="post-field">
-                <div className="post-label">Ubicación (opcional)</div>
-                <input className="post-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Madrid" autoComplete="off" />
+                <div className="post-label">Ubicación (Guinea Ecuatorial, opcional)</div>
+                <select className="post-input" value={city} onChange={(e) => setCity(e.target.value)} aria-label="Ciudad">
+                  <option value="">Selecciona ciudad (opcional)</option>
+                  {cities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                {city === "Otra" ? (
+                  <input className="post-input" value={customCity} onChange={(e) => setCustomCity(e.target.value)} placeholder="Escribe tu ciudad" autoComplete="off" />
+                ) : null}
               </div>
             </div>
 
