@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ChevronRight, MonitorSmartphone, Shirt, Home, Car, Gamepad2, Dumbbell, Sparkles, Gem, Baby, PawPrint, Wrench, Shapes, X } from "lucide-react";
 
@@ -85,36 +85,117 @@ const sheet = {
   exit: { y: 10, opacity: 0, transition: { duration: 0.14 } },
 };
 
+const RECENTS_KEY = "maqueti_recent_categories_v1";
+
+const readRecents = () => {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((x) => ({ category: String(x?.category || ""), subcategory: String(x?.subcategory || "") }))
+      .filter((x) => x.category);
+  } catch {
+    return [];
+  }
+};
+
+const writeRecents = (items) => {
+  try {
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(items.slice(0, 8)));
+  } catch {
+    undefined;
+  }
+};
+
 export default function CategorySelector({ value, onChange, placeholder = "Categoría" }) {
-  const currentCategory = value?.category || "";
-  const currentSub = value?.subcategory || "";
+  const rawCategory = String(value?.category || "").trim();
+  const rawSub = String(value?.subcategory || "").trim();
+  const parsed = useMemo(() => {
+    if (rawSub) return { category: rawCategory, subcategory: rawSub };
+    if (rawCategory.includes(" / ")) {
+      const [c, s] = rawCategory.split(" / ");
+      return { category: String(c || "").trim(), subcategory: String(s || "").trim() };
+    }
+    if (rawCategory.includes(" > ")) {
+      const [c, s] = rawCategory.split(" > ");
+      return { category: String(c || "").trim(), subcategory: String(s || "").trim() };
+    }
+    return { category: rawCategory, subcategory: "" };
+  }, [rawCategory, rawSub]);
+
+  const currentCategory = parsed.category || "";
+  const currentSub = parsed.subcategory || "";
   const label = currentCategory ? (currentSub ? `${currentCategory} > ${currentSub}` : currentCategory) : "";
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [query, setQuery] = useState("");
+  const [recent, setRecent] = useState([]);
+  const bodyRef = useRef(null);
+  const searchRef = useRef(null);
 
   const selectedNode = useMemo(() => CATEGORY_TREE.find((c) => c.name === selectedCategory) || null, [selectedCategory]);
   const subcategories = selectedNode?.subcategories || [];
+  const suggestions = useMemo(() => ["Tecnología", "Moda", "Motor", "Gaming", "Hogar", "Deporte"], []);
+
+  const filteredCategories = useMemo(() => {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return CATEGORY_TREE;
+    return CATEGORY_TREE.filter((c) => {
+      if (c.name.toLowerCase().includes(q)) return true;
+      return (c.subcategories || []).some((s) => String(s).toLowerCase().includes(q));
+    });
+  }, [query]);
+
+  const filteredSubcategories = useMemo(() => {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return subcategories;
+    return subcategories.filter((s) => String(s).toLowerCase().includes(q));
+  }, [query, subcategories]);
 
   useEffect(() => {
     if (!open) return;
     const baseCategory = currentCategory || "";
     setSelectedCategory(baseCategory);
     setStep(baseCategory ? 2 : 1);
+    setQuery("");
+    setRecent(readRecents());
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo?.({ top: 0 });
+      searchRef.current?.focus?.();
+    });
   }, [open, currentCategory]);
 
   const close = () => setOpen(false);
-  const goBack = () => setStep(1);
+  const goBack = () => {
+    setStep(1);
+    setQuery("");
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      searchRef.current?.focus?.();
+    });
+  };
 
   const pickCategory = (name) => {
     vibrate(10);
     setSelectedCategory(name);
     setStep(2);
+    setQuery("");
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      searchRef.current?.focus?.();
+    });
   };
 
   const pickSubcategory = (sub) => {
     vibrate(15);
+    const next = { category: selectedCategory, subcategory: sub };
+    const nextRecents = [{ category: next.category, subcategory: next.subcategory }, ...recent.filter((x) => x.category !== next.category || x.subcategory !== next.subcategory)];
+    setRecent(nextRecents.slice(0, 8));
+    writeRecents(nextRecents);
     onChange?.({ category: selectedCategory, subcategory: sub });
     close();
   };
@@ -124,13 +205,48 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
     onChange?.({ category: "", subcategory: "" });
   };
 
+  const useRecent = (item) => {
+    vibrate(10);
+    setSelectedCategory(item.category);
+    setStep(2);
+    setQuery(String(item.subcategory || ""));
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      searchRef.current?.focus?.();
+    });
+  };
+
+  const useSuggestion = (name) => {
+    vibrate(10);
+    setSelectedCategory(name);
+    setStep(2);
+    setQuery("");
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      searchRef.current?.focus?.();
+    });
+  };
+
   return (
     <>
       <button className={`cat-trigger ${label ? "filled" : ""}`} type="button" onClick={() => setOpen(true)}>
         <span className="cat-trigger-label">{label || placeholder}</span>
         <span className="cat-trigger-actions">
           {label ? (
-            <span className="cat-clear" role="button" tabIndex={0} onClick={(e) => (e.preventDefault(), e.stopPropagation(), clear())} aria-label="Quitar">
+            <span
+              className="cat-clear"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => (e.preventDefault(), e.stopPropagation(), clear())}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  clear();
+                }
+              }}
+              aria-label="Quitar"
+            >
               <X size={18} />
             </span>
           ) : null}
@@ -153,19 +269,61 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
                 )}
                 <div className="cat-titlewrap">
                   <div className="cat-title">Categorías</div>
-                  <div className="cat-breadcrumb">{step === 1 ? "Elige una categoría" : `${selectedCategory} >`}</div>
+                  <div className="cat-breadcrumb">
+                    {step === 1 ? "Elige una categoría" : currentCategory === selectedCategory && currentSub ? `${selectedCategory} > ${currentSub}` : selectedCategory}
+                  </div>
                 </div>
                 <button className="cat-close" type="button" onClick={close} aria-label="Cerrar">
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="cat-body">
+              <div className="cat-body" ref={bodyRef}>
+                <div className="cat-search">
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={step === 1 ? "Buscar categorías o subcategorías..." : "Buscar subcategoría..."}
+                    inputMode="search"
+                    autoComplete="off"
+                  />
+                  {query ? (
+                    <button className="cat-search-clear" type="button" onClick={() => setQuery("")} aria-label="Limpiar">
+                      <X size={18} />
+                    </button>
+                  ) : null}
+                </div>
                 <AnimatePresence mode="wait">
                   {step === 1 ? (
                     <motion.div key="step1" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.16 }}>
+                      {recent.length ? (
+                        <div className="cat-section">
+                          <div className="cat-section-title">Recientes</div>
+                          <div className="cat-chips">
+                            {recent.map((r) => (
+                              <button key={`${r.category}__${r.subcategory}`} className="cat-chip" type="button" onClick={() => useRecent(r)}>
+                                <span className="cat-chip-top">{r.category}</span>
+                                <span className="cat-chip-bottom">{r.subcategory || "—"}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="cat-section">
+                        <div className="cat-section-title">Sugeridas</div>
+                        <div className="cat-chips">
+                          {suggestions.map((name) => (
+                            <button key={name} className="cat-chip one" type="button" onClick={() => useSuggestion(name)}>
+                              <span className="cat-chip-top">{name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="cat-grid">
-                        {CATEGORY_TREE.map((c) => {
+                        {filteredCategories.map((c) => {
                           const Icon = c.icon;
                           const active = selectedCategory === c.name;
                           return (
@@ -178,11 +336,12 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
                           );
                         })}
                       </div>
+                      {filteredCategories.length === 0 ? <div className="cat-empty">No hay resultados</div> : null}
                     </motion.div>
                   ) : (
                     <motion.div key="step2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.16 }}>
                       <div className="cat-subgrid">
-                        {subcategories.map((s) => {
+                        {filteredSubcategories.map((s) => {
                           const active = currentSub === s && currentCategory === selectedCategory;
                           return (
                             <button key={s} className={`cat-sub ${active ? "active" : ""}`} type="button" onClick={() => pickSubcategory(s)}>
@@ -192,6 +351,7 @@ export default function CategorySelector({ value, onChange, placeholder = "Categ
                           );
                         })}
                       </div>
+                      {filteredSubcategories.length === 0 ? <div className="cat-empty">No hay resultados</div> : null}
 
                       <div className="cat-footer">
                         <button className="cat-change" type="button" onClick={goBack}>

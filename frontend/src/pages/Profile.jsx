@@ -13,12 +13,28 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
   const activeCount = useMemo(() => list.filter((p) => (p?.status || "published") !== "archived").length, [list]);
   const remaining = storeActive ? null : Math.max(0, freeLimit - activeCount);
 
+  const normalizeCategory = (category, subcategory) => {
+    const rawCat = String(category || "").trim();
+    const rawSub = String(subcategory || "").trim();
+    if (rawSub) return { category: rawCat || "Otros", subcategory: rawSub };
+    if (rawCat.includes(" / ")) {
+      const [c, s] = rawCat.split(" / ");
+      return { category: String(c || "").trim() || "Otros", subcategory: String(s || "").trim() };
+    }
+    if (rawCat.includes(" > ")) {
+      const [c, s] = rawCat.split(" > ");
+      return { category: String(c || "").trim() || "Otros", subcategory: String(s || "").trim() };
+    }
+    return { category: rawCat || "Otros", subcategory: "" };
+  };
+
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({
     title: "",
     price: "",
     stock: "",
     category: "",
+    subcategory: "",
     condition: "",
     location: "",
     description: "",
@@ -26,15 +42,16 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
     imageUrl: "",
   });
   const [busyId, setBusyId] = useState(null);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   const openEdit = (p) => {
+    const normalized = normalizeCategory(p.category, p.subcategory);
     setEditingId(p.id);
     setDraft({
       title: p.title || "",
       price: p.price === undefined || p.price === null ? "" : String(p.price),
       stock: p.stock === undefined || p.stock === null ? "" : String(p.stock),
-      category: p.category || "Otros",
+      category: normalized.category,
+      subcategory: normalized.subcategory,
       condition: p.condition || "Como nuevo",
       location: p.location || "",
       description: p.description || "",
@@ -45,7 +62,6 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
 
   const closeEdit = () => {
     setEditingId(null);
-    setShowCategorySelector(false);
   };
 
   const doRefresh = async () => {
@@ -61,6 +77,7 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
         price: draft.price === "" ? undefined : Number(draft.price),
         stock: draft.stock === "" ? null : Number(draft.stock),
         category: String(draft.category || "Otros").trim() || "Otros",
+        subcategory: String(draft.subcategory || "").trim() || null,
         condition: String(draft.condition || "Como nuevo").trim() || "Como nuevo",
         location: String(draft.location || "").trim() || null,
         description: String(draft.description || "").trim() || null,
@@ -141,7 +158,13 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
                 <div className="placeholder-img" style={{ width: 64, height: 64, borderRadius: 12, flex: "0 0 auto", backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                 <div className="inv-info" style={{ minWidth: 0 }}>
                   <h4 style={{ marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</h4>
-                  <p style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{`${priceLabel(p.price)} · ${p.category || "Otros"}`}</p>
+                  <p style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {(() => {
+                      const normalized = normalizeCategory(p.category, p.subcategory);
+                      const catLabel = normalized.subcategory ? `${normalized.category} > ${normalized.subcategory}` : normalized.category;
+                      return `${priceLabel(p.price)} · ${catLabel}`;
+                    })()}
+                  </p>
                 </div>
               </div>
 
@@ -165,9 +188,11 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
                     <input value={draft.sku} onChange={(e) => setDraft((d) => ({ ...d, sku: e.target.value }))} placeholder="SKU (opcional)" />
                   </div>
                   <div className="row-inputs">
-                    <button className="category-pick-btn" type="button" onClick={() => setShowCategorySelector(true)}>
-                      {`Categoría: ${draft.category || "Otros"}`}
-                    </button>
+                    <CategorySelector
+                      value={{ category: draft.category, subcategory: draft.subcategory }}
+                      onChange={({ category: c, subcategory: s }) => setDraft((d) => ({ ...d, category: c || "Otros", subcategory: s || "" }))}
+                      placeholder="Categoría"
+                    />
                     <input value={draft.condition} onChange={(e) => setDraft((d) => ({ ...d, condition: e.target.value }))} placeholder="Condición" />
                   </div>
                   <input value={draft.location} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} placeholder="Ubicación (opcional)" />
@@ -188,17 +213,6 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
           ))}
         </div>
       )}
-
-      {showCategorySelector && editingId ? (
-        <CategorySelector
-          onClose={() => setShowCategorySelector(false)}
-          onSelect={({ category: c, subcategory }) => {
-            const next = subcategory ? `${c} / ${subcategory}` : c;
-            setDraft((d) => ({ ...d, category: next || "Otros" }));
-            setShowCategorySelector(false);
-          }}
-        />
-      ) : null}
     </div>
   );
 }
