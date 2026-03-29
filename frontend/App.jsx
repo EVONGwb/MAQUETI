@@ -966,10 +966,15 @@ const AddProductView = ({ token, onCreated }) => {
   };
 
   const conditionOptions = ["Nuevo", "Como nuevo", "Buen estado", "Aceptable", "Otro"];
+  const titleMax = 70;
+  const descMax = 650;
+  const cleanTitle = String(title || "").trim();
+  const cleanDescription = String(description || "");
+  const catLabel = subcategory ? `${category} > ${subcategory}` : category;
   const titleError = touched.title && String(title || "").trim().length < 3 ? "Mínimo 3 caracteres" : "";
   const priceValue = Number(String(price || "").replace(",", "."));
   const priceError = touched.price && (!Number.isFinite(priceValue) || priceValue <= 0) ? "Precio inválido" : "";
-  const canSubmit = String(title || "").trim().length >= 3 && Number.isFinite(priceValue) && priceValue > 0 && !uploading;
+  const canSubmit = cleanTitle.length >= 3 && cleanTitle.length <= titleMax && Number.isFinite(priceValue) && priceValue > 0 && !uploading;
 
   return (
     <div className="view-container post-view">
@@ -977,6 +982,25 @@ const AddProductView = ({ token, onCreated }) => {
         <div>
           <h2>Subir producto</h2>
           <div className="post-subtitle">Rápido, visual y listo para vender.</div>
+        </div>
+      </div>
+
+      <div className="post-preview">
+        <div className="post-preview-media" style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}>
+          {!imagePreview ? (
+            <div className="post-preview-empty">
+              <ImageIcon size={18} />
+              Vista previa
+            </div>
+          ) : null}
+        </div>
+        <div className="post-preview-info">
+          <div className="post-preview-title">{cleanTitle || "Título del producto"}</div>
+          <div className="post-preview-meta">
+            <span className="post-preview-price">{Number.isFinite(priceValue) && priceValue > 0 ? priceLabel(priceValue) : "€0"}</span>
+            <span className="post-preview-dot">•</span>
+            <span className="post-preview-cat">{catLabel || "Otros"}</span>
+          </div>
         </div>
       </div>
 
@@ -1021,7 +1045,9 @@ const AddProductView = ({ token, onCreated }) => {
           <div className="post-card-title">Detalles</div>
           <div className="post-fields">
             <div className="post-field">
-              <div className="post-label">Título</div>
+              <div className="post-label">
+                Título <span className={`post-count ${cleanTitle.length > titleMax ? "bad" : ""}`}>{cleanTitle.length}/{titleMax}</span>
+              </div>
               <input
                 className="post-input"
                 value={title}
@@ -1030,7 +1056,11 @@ const AddProductView = ({ token, onCreated }) => {
                 placeholder="Ej: iPhone 13 Pro 128GB"
                 autoComplete="off"
               />
-              {titleError ? <div className="post-hint error">{titleError}</div> : <div className="post-hint">Que sea corto y claro.</div>}
+              {titleError || cleanTitle.length > titleMax ? (
+                <div className="post-hint error">{titleError || `Máximo ${titleMax} caracteres`}</div>
+              ) : (
+                <div className="post-hint">Que sea corto y claro.</div>
+              )}
             </div>
 
             <div className="post-grid2">
@@ -1099,8 +1129,16 @@ const AddProductView = ({ token, onCreated }) => {
             </details>
 
             <div className="post-field">
-              <div className="post-label">Descripción (opcional)</div>
-              <textarea className="post-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añade detalles, estado, entrega, etc." />
+              <div className="post-label">
+                Descripción (opcional) <span className={`post-count ${cleanDescription.length > descMax ? "bad" : ""}`}>{cleanDescription.length}/{descMax}</span>
+              </div>
+              <textarea
+                className="post-textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Añade detalles, estado, entrega, etc."
+              />
+              {cleanDescription.length > descMax ? <div className="post-hint error">{`Máximo ${descMax} caracteres`}</div> : null}
             </div>
           </div>
         </div>

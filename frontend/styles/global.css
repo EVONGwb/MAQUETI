@@ -2794,6 +2794,83 @@ h3 {
   color: rgba(15, 23, 42, 0.62);
 }
 
+.post-preview {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.06);
+  margin-bottom: 12px;
+}
+
+.post-preview-media {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.post-preview-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.post-preview-info {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.post-preview-title {
+  font-weight: 900;
+  font-size: 14px;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-preview-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 900;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.62);
+}
+
+.post-preview-price {
+  color: #ff5a00;
+  flex-shrink: 0;
+}
+
+.post-preview-dot {
+  color: rgba(15, 23, 42, 0.35);
+  flex-shrink: 0;
+}
+
+.post-preview-cat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .post-form {
   display: grid;
   gap: 14px;
@@ -2892,6 +2969,17 @@ h3 {
   font-weight: 900;
   font-size: 12px;
   color: rgba(15, 23, 42, 0.62);
+}
+
+.post-count {
+  margin-left: 8px;
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.45);
+}
+
+.post-count.bad {
+  color: rgba(220, 38, 38, 0.9);
 }
 
 .post-input {
