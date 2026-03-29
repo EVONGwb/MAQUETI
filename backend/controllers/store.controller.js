@@ -155,10 +155,49 @@ const getPublicStoreBySlug = async (req, res) => {
   }
 };
 
+const listPublicStores = async (req, res) => {
+  try {
+    const limitRaw = req.query?.limit;
+    const offsetRaw = req.query?.offset;
+    const limit = Math.max(1, Math.min(20, Number(limitRaw || 3) || 3));
+    const offset = Math.max(0, Number(offsetRaw || 0) || 0);
+
+    const filter = { status: "active" };
+    const projection = {
+      _id: 0,
+      id: 1,
+      slug: 1,
+      name: 1,
+      description: 1,
+      logoUrl: 1,
+      bannerUrl: 1,
+      themePrimary: 1,
+      themeAccent: 1,
+      themeBackground: 1,
+      updatedAt: 1,
+      createdAt: 1,
+    };
+
+    const [total, stores] = await Promise.all([
+      Store.countDocuments(filter),
+      Store.find(filter, projection)
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .skip(offset)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    return res.json({ total, stores });
+  } catch {
+    return res.status(500).json({ message: "Error al listar tiendas" });
+  }
+};
+
 module.exports = {
   requireStoreSubscription,
   getMyStore,
   upsertMyStore,
   getPublicStoreBySlug,
   uploadMyStoreAsset,
+  listPublicStores,
 };

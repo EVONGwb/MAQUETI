@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
-import { createOrGetConversation, resolveImageSrc } from "../services/api";
+import { createOrGetConversation, fetchPublicStores, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
   const navigate = useNavigate();
   const [chatError, setChatError] = useState("");
+  const [storesLoading, setStoresLoading] = useState(true);
+  const [recommendedStores, setRecommendedStores] = useState([]);
 
   const reveal = useMemo(
     () => ({
@@ -74,12 +76,6 @@ export default function HomePage({ products, search, setSearch, categories, acti
     return [...list].slice(-6).reverse();
   }, [products, selectedCategory]);
 
-  const storesData = [
-    { id: 1, name: "Tech Urban", tag: "Premium Tech", avatar: "TU" },
-    { id: 2, name: "Street Mode", tag: "Moda urbana", avatar: "SM" },
-    { id: 3, name: "Game Hub", tag: "Gaming", avatar: "GH" },
-  ];
-
   const productSkeletons = useMemo(() => Array.from({ length: 6 }).map((_, i) => ({ id: `sk-${i}` })), []);
   const storeSkeletons = useMemo(() => Array.from({ length: 3 }).map((_, i) => ({ id: `sk-store-${i}` })), []);
 
@@ -106,6 +102,43 @@ export default function HomePage({ products, search, setSearch, categories, acti
         setChatError(e?.message || "No se pudo iniciar la conversación");
       }
     }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setStoresLoading(true);
+      try {
+        const data = await fetchPublicStores({ limit: 3 });
+        const list = Array.isArray(data?.stores) ? data.stores : [];
+        if (!cancelled) setRecommendedStores(list);
+      } catch {
+        if (!cancelled) setRecommendedStores([]);
+      } finally {
+        if (!cancelled) setStoresLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const storeAvatarText = (store) => {
+    const name = String(store?.name || "").trim();
+    if (!name) return "TI";
+    const parts = name.split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "T";
+    const b = parts[1]?.[0] || parts[0]?.[1] || "I";
+    return `${String(a).toUpperCase()}${String(b).toUpperCase()}`;
+  };
+
+  const storeTag = (store) => {
+    const d = String(store?.description || "").trim();
+    if (d) return d.length > 48 ? `${d.slice(0, 48)}…` : d;
+    return "Tienda en MAQUETI";
   };
 
   return (
@@ -215,7 +248,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
           </div>
 
           <div className="st-stores">
-            {loading
+            {storesLoading || loading
               ? storeSkeletons.map((s) => (
                   <div key={s.id} className="st-store-card st-skeleton-card">
                     <div className="st-store-top">
@@ -228,20 +261,31 @@ export default function HomePage({ products, search, setSearch, categories, acti
                     <div className="st-skeleton st-skeleton-btn" />
                   </div>
                 ))
-              : storesData.map((store) => (
-                  <motion.article key={store.id} className="st-store-card" whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }}>
-                    <div className="st-store-top">
-                      <div className="st-store-avatar">{store.avatar}</div>
-                      <div>
-                        <h4>{store.name}</h4>
-                        <p>{store.tag}</p>
+              : recommendedStores.length === 0
+                ? <div className="st-empty-state">Aún no hay tiendas disponibles.</div>
+                : recommendedStores.map((store) => (
+                    <motion.article key={store.id || store.slug} className="st-store-card" whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }} tabIndex={0}>
+                      <div className="st-store-top">
+                        <div
+                          className="st-store-avatar"
+                          style={
+                            store?.logoUrl
+                              ? { backgroundImage: `url(${resolveImageSrc(store.logoUrl)})`, backgroundSize: "cover", backgroundPosition: "center", color: "transparent" }
+                              : undefined
+                          }
+                        >
+                          {store?.logoUrl ? null : storeAvatarText(store)}
+                        </div>
+                        <div>
+                          <h4>{store.name}</h4>
+                          <p>{storeTag(store)}</p>
+                        </div>
                       </div>
-                    </div>
-                    <button className="st-store-btn" type="button">
-                      Visitar tienda
-                    </button>
-                  </motion.article>
-                ))}
+                      <button className="st-store-btn" type="button" onClick={() => navigate(`/shop/${store.slug}`)}>
+                        Visitar tienda
+                      </button>
+                    </motion.article>
+                  ))}
           </div>
         </motion.section>
 

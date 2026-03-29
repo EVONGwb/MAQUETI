@@ -139,6 +139,17 @@ export const fetchPublicStore = async (slug) => {
   return data;
 };
 
+export const fetchPublicStores = async ({ limit, offset } = {}) => {
+  const q = new URLSearchParams();
+  if (limit !== undefined && limit !== null) q.set("limit", String(limit));
+  if (offset !== undefined && offset !== null) q.set("offset", String(offset));
+  const qs = q.toString();
+  const res = await fetch(`${getApiUrl()}/api/stores${qs ? `?${qs}` : ""}`);
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando tiendas: ${res.status}`);
+  return data;
+};
+
 export const updateProduct = async (id, token, payload) => {
   const res = await fetch(`${getApiUrl()}/api/products/${id}`, {
     method: "PUT",

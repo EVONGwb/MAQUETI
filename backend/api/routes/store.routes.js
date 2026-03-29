@@ -5,7 +5,7 @@ const path = require("path");
 const fs = require("fs");
 
 const authMiddleware = require("../middlewares/auth.middleware");
-const { requireStoreSubscription, getMyStore, upsertMyStore, getPublicStoreBySlug, uploadMyStoreAsset } = require("../../controllers/store.controller");
+const { requireStoreSubscription, getMyStore, upsertMyStore, getPublicStoreBySlug, uploadMyStoreAsset, listPublicStores } = require("../../controllers/store.controller");
 
 const uploadDir = path.join(__dirname, "../../..", "storage", "store_uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -37,6 +37,7 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+router.get("/stores", listPublicStores);
 router.get("/stores/me", authMiddleware, requireStoreSubscription, getMyStore);
 router.put("/stores/me", authMiddleware, requireStoreSubscription, upsertMyStore);
 router.post("/stores/me", authMiddleware, requireStoreSubscription, upsertMyStore);
