@@ -237,6 +237,8 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
         }
         await doRefresh();
       }
+    } catch (err) {
+      alert(err.message || "Error al guardar el perfil");
     } finally {
       setProfileBusy(false);
     }
@@ -543,6 +545,8 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
                     try {
                       const url = await uploadImageToCloudinary(f);
                       setProfileDraft((d) => ({ ...d, avatarUrl: url }));
+                    } catch (err) {
+                      alert(err.message || "Error al subir la imagen");
                     } finally {
                       setProfileBusy(false);
                     }
@@ -579,6 +583,8 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
                     try {
                       const url = await uploadImageToCloudinary(f);
                       setProfileDraft((d) => ({ ...d, bannerUrl: url }));
+                    } catch (err) {
+                      alert(err.message || "Error al subir el banner");
                     } finally {
                       setProfileBusy(false);
                     }
