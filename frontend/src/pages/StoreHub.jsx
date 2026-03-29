@@ -552,9 +552,23 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
           <div className="inventory-list">
             {myProducts.map((p) => (
               <div key={p.id} className="inventory-item">
-                <div className="inv-info">
-                  <h4>{p.title}</h4>
-                  <p>{priceLabel(p.price)} · {statusLabel(p.status)}</p>
+                <div className="inv-left">
+                  <div
+                    className="inv-thumb"
+                    style={
+                      p.imageUrl
+                        ? { backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
+                        : {}
+                    }
+                  >
+                    {!p.imageUrl ? "IMG" : null}
+                  </div>
+                  <div className="inv-info">
+                    <h4>{p.title}</h4>
+                    <p>
+                      {priceLabel(p.price)} · {statusLabel(p.status)}
+                    </p>
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <select value={p.status || "published"} onChange={(e) => updateOneProduct(p.id, { status: e.target.value })}>
