@@ -839,6 +839,7 @@ const AddProductView = ({ token, onCreated }) => {
   const [category, setCategory] = useState("Otros");
   const [subcategory, setSubcategory] = useState("");
   const [condition, setCondition] = useState("Como nuevo");
+  const [customCondition, setCustomCondition] = useState("");
   const [location, setLocation] = useState("");
   const [sku, setSku] = useState("");
   const [message, setMessage] = useState("");
@@ -846,19 +847,25 @@ const AddProductView = ({ token, onCreated }) => {
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [limitInfo, setLimitInfo] = useState(null);
+  const [touched, setTouched] = useState({ title: false, price: false });
   const navigate = useNavigate();
 
   const CLOUDINARY_CLOUD_NAME = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "").trim();
   const CLOUDINARY_UPLOAD_PRESET = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "").trim();
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview("");
   };
 
   const uploadImageToCloudinary = async (file) => {
@@ -892,6 +899,14 @@ const AddProductView = ({ token, onCreated }) => {
     setLimitInfo(null);
 
     try {
+      const cleanTitle = String(title || "").trim();
+      const priceValue = Number(String(price || "").replace(",", "."));
+      const finalCondition = condition === "Otro" ? String(customCondition || "").trim() : String(condition || "").trim();
+
+      if (cleanTitle.length < 3) throw new Error("Pon un título más claro (mínimo 3 caracteres).");
+      if (!Number.isFinite(priceValue) || priceValue <= 0) throw new Error("Pon un precio válido.");
+      if (!finalCondition) throw new Error("Selecciona una condición.");
+
       let uploadedUrl = "";
       if (imageFile) {
         uploadedUrl = await uploadImageToCloudinary(imageFile);
@@ -908,13 +923,13 @@ const AddProductView = ({ token, onCreated }) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title,
-          price: Number(price),
+          title: cleanTitle,
+          price: priceValue,
           description: description || null,
           stock: stock === "" ? null : Number(stock),
           category,
           subcategory: subcategory || null,
-          condition,
+          condition: finalCondition,
           location: location || null,
           sku: sku || null,
           imageUrl: uploadedUrl || null
@@ -937,6 +952,7 @@ const AddProductView = ({ token, onCreated }) => {
       setCategory("Otros");
       setSubcategory("");
       setCondition("Como nuevo");
+      setCustomCondition("");
       setLocation("");
       setSku("");
       setImageFile(null);
@@ -949,46 +965,153 @@ const AddProductView = ({ token, onCreated }) => {
     }
   };
 
+  const conditionOptions = ["Nuevo", "Como nuevo", "Buen estado", "Aceptable", "Otro"];
+  const titleError = touched.title && String(title || "").trim().length < 3 ? "Mínimo 3 caracteres" : "";
+  const priceValue = Number(String(price || "").replace(",", "."));
+  const priceError = touched.price && (!Number.isFinite(priceValue) || priceValue <= 0) ? "Precio inválido" : "";
+  const canSubmit = String(title || "").trim().length >= 3 && Number.isFinite(priceValue) && priceValue > 0 && !uploading;
+
   return (
-    <div className="view-container">
-      <h2>Subir Producto</h2>
-      <form className="add-form" onSubmit={handleCreate}>
-        <label className="image-upload" style={imagePreview ? { backgroundImage: `url(${imagePreview})`, backgroundSize: 'cover', backgroundPosition: 'center', border: 'none' } : {}}>
-          {!imagePreview && <span>+ Añadir fotos</span>}
-          <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
-        </label>
-        <input type="text" placeholder="Título del producto" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <input type="number" placeholder="Precio (€)" value={price} onChange={(e) => setPrice(e.target.value)} required />
-        <div className="row-inputs">
-          <input type="number" placeholder="Stock" value={stock} onChange={(e) => setStock(e.target.value)} />
-          <input type="text" placeholder="SKU (Opcional)" value={sku} onChange={(e) => setSku(e.target.value)} />
+    <div className="view-container post-view">
+      <div className="post-header">
+        <div>
+          <h2>Subir producto</h2>
+          <div className="post-subtitle">Rápido, visual y listo para vender.</div>
         </div>
-        <div className="row-inputs">
-          <CategorySelector
-            value={{ category, subcategory }}
-            onChange={({ category: c, subcategory: s }) => {
-              setCategory(c || "Otros");
-              setSubcategory(s || "");
-            }}
-          />
-          <input type="text" placeholder="Condición" value={condition} onChange={(e) => setCondition(e.target.value)} />
-        </div>
-        <input type="text" placeholder="Ubicación (opcional)" value={location} onChange={(e) => setLocation(e.target.value)} />
-        <textarea placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <button type="submit" className="primary-btn" disabled={uploading}>
-          {uploading ? "Publicando..." : "Publicar"}
-        </button>
-      </form>
-      {message ? <p className="msg">{message}</p> : null}
+      </div>
+
       {limitInfo ? (
-        <div className="empty-state">
-          <h4>Límite alcanzado</h4>
-          <p>Los usuarios normales pueden publicar hasta {limitInfo.limit || "X"} productos. Para publicar sin límite, activa el modo Tienda.</p>
-          <button className="primary-btn" type="button" style={{ marginTop: 12 }} onClick={() => navigate("/store")}>
+        <div className="post-limit">
+          <div className="post-limit-title">Límite alcanzado</div>
+          <div className="post-limit-text">
+            Los usuarios normales pueden publicar hasta {limitInfo.limit || "X"} productos. Para publicar sin límite, activa el modo Tienda.
+          </div>
+          <button className="primary-btn" type="button" onClick={() => navigate("/store")}>
             Ir a Tienda
           </button>
         </div>
       ) : null}
+
+      <form className="post-form" onSubmit={handleCreate}>
+        <div className="post-card">
+          <div className="post-card-head">
+            <div className="post-card-title">Foto</div>
+            {imagePreview ? (
+              <button className="post-link" type="button" onClick={removeImage}>
+                Quitar
+              </button>
+            ) : null}
+          </div>
+
+          <label
+            className={`post-photo ${imagePreview ? "has" : ""}`}
+            style={imagePreview ? { backgroundImage: `url(${imagePreview})` } : {}}
+          >
+            {!imagePreview ? (
+              <span className="post-photo-empty">
+                <ImageIcon size={20} />
+                Añadir foto
+              </span>
+            ) : null}
+            <input type="file" accept="image/*" capture="environment" onChange={handleImageChange} />
+          </label>
+        </div>
+
+        <div className="post-card">
+          <div className="post-card-title">Detalles</div>
+          <div className="post-fields">
+            <div className="post-field">
+              <div className="post-label">Título</div>
+              <input
+                className="post-input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, title: true }))}
+                placeholder="Ej: iPhone 13 Pro 128GB"
+                autoComplete="off"
+              />
+              {titleError ? <div className="post-hint error">{titleError}</div> : <div className="post-hint">Que sea corto y claro.</div>}
+            </div>
+
+            <div className="post-grid2">
+              <div className="post-field">
+                <div className="post-label">Precio</div>
+                <div className="post-money">
+                  <span className="post-money-prefix">€</span>
+                  <input
+                    className="post-input"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, price: true }))}
+                    placeholder="0"
+                    inputMode="decimal"
+                    autoComplete="off"
+                  />
+                </div>
+                {priceError ? <div className="post-hint error">{priceError}</div> : <div className="post-hint">Pon un precio competitivo.</div>}
+              </div>
+
+              <div className="post-field">
+                <div className="post-label">Condición</div>
+                <div className="post-segment">
+                  {conditionOptions.map((opt) => (
+                    <button key={opt} className={`post-pill ${condition === opt ? "active" : ""}`} type="button" onClick={() => setCondition(opt)}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                {condition === "Otro" ? (
+                  <input className="post-input" value={customCondition} onChange={(e) => setCustomCondition(e.target.value)} placeholder="Especifica la condición" />
+                ) : null}
+              </div>
+            </div>
+
+            <div className="post-grid2">
+              <div className="post-field">
+                <div className="post-label">Categoría</div>
+                <CategorySelector
+                  value={{ category, subcategory }}
+                  onChange={({ category: c, subcategory: s }) => {
+                    setCategory(c || "Otros");
+                    setSubcategory(s || "");
+                  }}
+                />
+              </div>
+
+              <div className="post-field">
+                <div className="post-label">Ubicación (opcional)</div>
+                <input className="post-input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ej: Madrid" autoComplete="off" />
+              </div>
+            </div>
+
+            <details className="post-advanced">
+              <summary className="post-advanced-summary">Opciones avanzadas</summary>
+              <div className="post-grid2">
+                <div className="post-field">
+                  <div className="post-label">Stock (opcional)</div>
+                  <input className="post-input" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="Ej: 3" inputMode="numeric" />
+                </div>
+                <div className="post-field">
+                  <div className="post-label">SKU (opcional)</div>
+                  <input className="post-input" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Ej: IP13-128" autoComplete="off" />
+                </div>
+              </div>
+            </details>
+
+            <div className="post-field">
+              <div className="post-label">Descripción (opcional)</div>
+              <textarea className="post-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añade detalles, estado, entrega, etc." />
+            </div>
+          </div>
+        </div>
+
+        <div className="post-footer">
+          <button type="submit" className="primary-btn post-submit" disabled={!canSubmit}>
+            {uploading ? "Publicando..." : "Publicar"}
+          </button>
+          {message ? <div className="post-msg">{message}</div> : null}
+        </div>
+      </form>
     </div>
   );
 };
