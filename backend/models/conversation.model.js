@@ -8,6 +8,7 @@ const conversationSchema = new mongoose.Schema(
     sellerId: { type: Number, required: true, index: true },
     lastMessage: { type: String, default: "" },
     lastMessageAt: { type: Number, required: true, index: true },
+    status: { type: String, default: "open", index: true },
     createdAt: { type: Number, required: true },
     updatedAt: { type: Number, required: true },
   },

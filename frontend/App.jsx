@@ -13,6 +13,10 @@ import InstallPrompt from "./src/components/InstallPrompt";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
 import ProfilePage from "./src/pages/Profile";
+import AdminLogin from "./src/pages/admin/AdminLogin";
+import AdminDashboard from "./src/pages/admin/AdminDashboard";
+import AdminManage from "./src/pages/admin/AdminManage";
+import AdminSettingsAudit from "./src/pages/admin/AdminSettingsAudit";
 import { getApiUrl, parseJsonResponse } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
@@ -1384,6 +1388,11 @@ function App() {
     const storedEmail = localStorage.getItem("userEmail") || "";
     const storedId = localStorage.getItem("userId") || "";
     const storedName = localStorage.getItem("userName") || "";
+    const storedIsAdmin = localStorage.getItem("userIsAdmin") || "";
+    const storedStoreSubscriptionStatus = localStorage.getItem("userStoreSubscriptionStatus") || "";
+    const storedStorePlan = localStorage.getItem("userStorePlan") || "";
+    const storedStoreSubscriptionEndsAt = localStorage.getItem("userStoreSubscriptionEndsAt") || "";
+    const storedStorePaymentsUnlocked = localStorage.getItem("userStorePaymentsUnlocked") || "";
 
     if (storedToken && !isJwtExpired(storedToken)) {
       setIsLogged(true);
@@ -1392,6 +1401,11 @@ function App() {
         id: storedId ? Number(storedId) : null,
         email: storedEmail,
         name: storedName,
+        isAdmin: storedIsAdmin === "true",
+        storeSubscriptionStatus: storedStoreSubscriptionStatus || "none",
+        storePlan: storedStorePlan || null,
+        storeSubscriptionEndsAt: storedStoreSubscriptionEndsAt ? Number(storedStoreSubscriptionEndsAt) : null,
+        storePaymentsUnlocked: storedStorePaymentsUnlocked === "true",
       };
       setUser(u);
       refreshData(storedToken, u);
@@ -1402,6 +1416,11 @@ function App() {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userId");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userIsAdmin");
+    localStorage.removeItem("userStoreSubscriptionStatus");
+    localStorage.removeItem("userStorePlan");
+    localStorage.removeItem("userStoreSubscriptionEndsAt");
+    localStorage.removeItem("userStorePaymentsUnlocked");
     refreshData("", null);
   }, []);
 
@@ -1411,12 +1430,25 @@ function App() {
     localStorage.setItem("userEmail", data.user.email);
     localStorage.setItem("userId", String(data.user.id));
     localStorage.setItem("userName", data.user.name || "");
+    localStorage.setItem("userIsAdmin", String(Boolean(data.user.isAdmin)));
+    localStorage.setItem("userStoreSubscriptionStatus", String(data.user.storeSubscriptionStatus || "none"));
+    localStorage.setItem("userStorePlan", data.user.storePlan ? String(data.user.storePlan) : "");
+    localStorage.setItem("userStoreSubscriptionEndsAt", data.user.storeSubscriptionEndsAt ? String(Number(data.user.storeSubscriptionEndsAt)) : "");
+    localStorage.setItem("userStorePaymentsUnlocked", String(Boolean(data.user.storePaymentsUnlocked)));
     setToken(data.token);
     setUser(data.user);
     setIsLogged(true);
     await refreshData(data.token, data.user);
     closeAuth();
-    navigate("/");
+    let redirectTo = "/";
+    try {
+      const v = sessionStorage.getItem("maqueti_auth_redirect");
+      if (v) redirectTo = v;
+      sessionStorage.removeItem("maqueti_auth_redirect");
+    } catch {
+      undefined;
+    }
+    navigate(redirectTo);
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -1528,6 +1560,11 @@ function App() {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userId");
     localStorage.removeItem("userName");
+    localStorage.removeItem("userIsAdmin");
+    localStorage.removeItem("userStoreSubscriptionStatus");
+    localStorage.removeItem("userStorePlan");
+    localStorage.removeItem("userStoreSubscriptionEndsAt");
+    localStorage.removeItem("userStorePaymentsUnlocked");
     setIsLogged(false);
     setToken("");
     setUser(null);
@@ -1539,11 +1576,59 @@ function App() {
   };
 
   const activePath = location.pathname;
+  const isAdmin = Boolean(user?.isAdmin);
+  const hideNav = activePath === "/login" || activePath.startsWith("/admin");
 
   return (
     <div className="app-layout">
       <div className="main-content">
         <Routes>
+          <Route path="/login" element={<AdminLogin isLogged={isLogged} user={user} openAuth={openAuth} />} />
+          <Route
+            path="/admin"
+            element={
+              !isLogged ? (
+                <Navigate to={`/login?redirect=${encodeURIComponent("/admin")}`} replace />
+              ) : !isAdmin ? (
+                <div className="view-container">
+                  <h2>Acceso admin requerido</h2>
+                  <div className="empty-state">Tu cuenta no tiene permisos de administrador.</div>
+                </div>
+              ) : (
+                <AdminDashboard user={user} onLogout={handleLogout} />
+              )
+            }
+          />
+          <Route
+            path="/admin/manage/:module"
+            element={
+              !isLogged ? (
+                <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />
+              ) : !isAdmin ? (
+                <div className="view-container">
+                  <h2>Acceso admin requerido</h2>
+                  <div className="empty-state">Tu cuenta no tiene permisos de administrador.</div>
+                </div>
+              ) : (
+                <AdminManage token={token} user={user} onLogout={handleLogout} />
+              )
+            }
+          />
+          <Route
+            path="/admin/settings-audit"
+            element={
+              !isLogged ? (
+                <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />
+              ) : !isAdmin ? (
+                <div className="view-container">
+                  <h2>Acceso admin requerido</h2>
+                  <div className="empty-state">Tu cuenta no tiene permisos de administrador.</div>
+                </div>
+              ) : (
+                <AdminSettingsAudit token={token} user={user} onLogout={handleLogout} />
+              )
+            }
+          />
           <Route path="/" element={<HomePage products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route path="/unicorn" element={<HomeUnicornReal products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} loading={loading} error={error} toggleFavorite={toggleFavorite} favorites={favorites} token={token} onRequireAuth={() => openAuth("Regístrate o inicia sesión para chatear con el vendedor.")} />} />
           <Route path="/explore" element={<ExploreView products={products} search={search} setSearch={setSearch} categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
@@ -1599,7 +1684,7 @@ function App() {
       </div>
 
       <InstallPrompt />
-      <BottomNav isLogged={isLogged} openAuth={openAuth} />
+      {hideNav ? null : <BottomNav isLogged={isLogged} openAuth={openAuth} />}
       <AuthPrompt
         open={showAuth}
         title="Necesitas una cuenta"

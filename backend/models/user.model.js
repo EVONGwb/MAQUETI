@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     googleSub: { type: String, default: null },
     isAdmin: { type: Boolean, default: false, index: true },
+    status: { type: String, default: "active", index: true },
     storeSubscriptionStatus: { type: String, default: "none", index: true },
     storePlan: { type: String, default: null },
     storeSubscriptionEndsAt: { type: Number, default: null },

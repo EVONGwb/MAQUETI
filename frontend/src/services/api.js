@@ -190,3 +190,225 @@ export const markConversationAsRead = async (conversationId, token) => {
   if (!res.ok) throw new Error(data?.message || `Error marcando como leído: ${res.status}`);
   return data;
 };
+
+export const adminFetchUsers = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.q) params.set("q", String(query.q));
+  if (query?.status) params.set("status", String(query.status));
+  if (query?.isAdmin !== undefined) params.set("isAdmin", String(Boolean(query.isAdmin)));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/users${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando usuarios: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateUserStoreAccess = async (userId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/users/${userId}/store-access`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando acceso tienda: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateUser = async (userId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/users/${userId}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando usuario: ${res.status}`);
+  return data;
+};
+
+export const adminFetchProducts = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.q) params.set("q", String(query.q));
+  if (query?.status) params.set("status", String(query.status));
+  if (query?.userId) params.set("userId", String(query.userId));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/products${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando productos: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateProduct = async (productId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/products/${productId}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando producto: ${res.status}`);
+  return data;
+};
+
+export const adminDeleteProduct = async (productId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/products/${productId}`, {
+    method: "DELETE",
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error eliminando producto: ${res.status}`);
+  return data;
+};
+
+export const adminFetchStores = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.q) params.set("q", String(query.q));
+  if (query?.status) params.set("status", String(query.status));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/stores${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando tiendas: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateStore = async (storeId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/stores/${storeId}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando tienda: ${res.status}`);
+  return data;
+};
+
+export const adminFetchChats = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.status) params.set("status", String(query.status));
+  if (query?.productId) params.set("productId", String(query.productId));
+  if (query?.buyerId) params.set("buyerId", String(query.buyerId));
+  if (query?.sellerId) params.set("sellerId", String(query.sellerId));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/chats${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando chats: ${res.status}`);
+  return data;
+};
+
+export const adminFetchChatMessages = async (chatId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/chats/${chatId}/messages`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando mensajes: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateChat = async (chatId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/chats/${chatId}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando chat: ${res.status}`);
+  return data;
+};
+
+export const adminGetSettings = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/settings`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando settings: ${res.status}`);
+  return data;
+};
+
+export const adminPatchSettings = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/settings`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error guardando settings: ${res.status}`);
+  return data;
+};
+
+export const adminFetchAds = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.status) params.set("status", String(query.status));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/ads${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando publicidad: ${res.status}`);
+  return data;
+};
+
+export const adminCreateAd = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/ads`, {
+    method: "POST",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error creando publicidad: ${res.status}`);
+  return data;
+};
+
+export const adminUpdateAd = async (adId, token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/ads/${adId}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando publicidad: ${res.status}`);
+  return data;
+};
+
+export const adminDeleteAd = async (adId, token) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/ads/${adId}`, {
+    method: "DELETE",
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error eliminando publicidad: ${res.status}`);
+  return data;
+};
+
+export const adminFetchAudit = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.actorUserId) params.set("actorUserId", String(query.actorUserId));
+  if (query?.action) params.set("action", String(query.action));
+  if (query?.entityType) params.set("entityType", String(query.entityType));
+  if (query?.from) params.set("from", String(query.from));
+  if (query?.to) params.set("to", String(query.to));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/audit${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando auditoría: ${res.status}`);
+  return data;
+};

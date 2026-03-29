@@ -42,6 +42,7 @@ const passwordRegister = async (req, res) => {
         name: created.name,
         email: created.email,
         isAdmin: Boolean(created.isAdmin),
+        status: created.status || "active",
         storeSubscriptionStatus: created.storeSubscriptionStatus || "none",
         storePlan: created.storePlan || null,
         storeSubscriptionEndsAt: created.storeSubscriptionEndsAt || null,
@@ -67,6 +68,7 @@ const passwordLogin = async (req, res) => {
       password: 1,
       googleSub: 1,
       isAdmin: 1,
+      status: 1,
       storeSubscriptionStatus: 1,
       storePlan: 1,
       storeSubscriptionEndsAt: 1,
@@ -74,6 +76,7 @@ const passwordLogin = async (req, res) => {
     });
     if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
     if (user.googleSub) return res.status(409).json({ message: "Este email usa Google. Entra con Google." });
+    if (user.status && user.status !== "active") return res.status(403).json({ message: "Cuenta bloqueada" });
 
     const ok = await bcrypt.compare(rawPassword, user.password);
     if (!ok) return res.status(401).json({ message: "Credenciales inválidas" });
@@ -87,6 +90,7 @@ const passwordLogin = async (req, res) => {
         name: user.name,
         email: user.email,
         isAdmin: Boolean(user.isAdmin),
+        status: user.status || "active",
         storeSubscriptionStatus: user.storeSubscriptionStatus || "none",
         storePlan: user.storePlan || null,
         storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,
@@ -139,11 +143,16 @@ const googleLogin = async (req, res) => {
         $setOnInsert: { id: generateNumericId() },
       },
       { new: true, upsert: true }
-    ).select({ id: 1, name: 1, email: 1, isAdmin: 1, storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1 });
+    ).select({ id: 1, name: 1, email: 1, isAdmin: 1, status: 1, storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1 });
 
     if (!user) {
       return res.status(500).json({
         message: "Error al iniciar sesión",
+      });
+    }
+    if (user.status && user.status !== "active") {
+      return res.status(403).json({
+        message: "Cuenta bloqueada",
       });
     }
 
@@ -157,6 +166,7 @@ const googleLogin = async (req, res) => {
         name: user.name,
         email: user.email,
         isAdmin: Boolean(user.isAdmin),
+        status: user.status || "active",
         storeSubscriptionStatus: user.storeSubscriptionStatus || "none",
         storePlan: user.storePlan || null,
         storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,

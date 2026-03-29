@@ -12,6 +12,7 @@ const storeSchema = new mongoose.Schema(
     themePrimary: { type: String, default: "#2563eb" },
     themeAccent: { type: String, default: "#0f172a" },
     themeBackground: { type: String, default: "#ffffff" },
+    status: { type: String, default: "active", index: true },
     createdAt: { type: Number, required: true, index: true },
     updatedAt: { type: Number, required: true, index: true },
   },
