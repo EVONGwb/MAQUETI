@@ -57,7 +57,7 @@ const patchMe = async (req, res) => {
     if (name !== undefined && name.length < 2) return res.status(400).json({ message: "Nombre demasiado corto" });
     if (name !== undefined && name.length > 40) return res.status(400).json({ message: "Nombre demasiado largo" });
 
-    const urlOk = (v) => v === null || v === undefined || (typeof v === "string" && v.length <= 600 && (v.startsWith("http://") || v.startsWith("https://")));
+    const urlOk = (v) => v === null || v === undefined || (typeof v === "string" && v.length <= 600 && (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/")));
     if (!urlOk(avatarUrl)) return res.status(400).json({ message: "URL de avatar inválida" });
     if (!urlOk(bannerUrl)) return res.status(400).json({ message: "URL de banner inválida" });
 
