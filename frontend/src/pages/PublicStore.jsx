@@ -73,12 +73,12 @@ export default function PublicStorePage() {
       <div className="store-header" style={{ margin: 0, borderRadius: 24, overflow: "hidden" }}>
         <div
           className="store-banner placeholder-img"
-          style={store.bannerUrl ? { backgroundImage: `url(${store.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+          style={store.bannerUrl ? { backgroundImage: `url(${resolveImageSrc(store.bannerUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
         />
         <div className="store-profile">
           <div
             className="store-avatar"
-            style={store.logoUrl ? { backgroundImage: `url(${store.logoUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+            style={store.logoUrl ? { backgroundImage: `url(${resolveImageSrc(store.logoUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
           />
           <div>
             <h2 style={{ color: store.themeAccent || "#0f172a" }}>{store.name}</h2>
@@ -112,4 +112,3 @@ export default function PublicStorePage() {
     </div>
   );
 }
-

@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json()); 
 
 app.use("/uploads/chat", express.static(path.join(__dirname, "../storage/chat_uploads")));
+app.use("/uploads/store", express.static(path.join(__dirname, "../storage/store_uploads")));
 
 const testRoutes = require("./routes/testRoutes");
 const authRoutes = require("./routes/authRoutes");

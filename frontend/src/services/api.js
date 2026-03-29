@@ -76,6 +76,24 @@ export const upsertMyStore = async (token, payload) => {
   return data;
 };
 
+export const uploadMyStoreAsset = async (token, file, type) => {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${getApiUrl()}/api/stores/me/upload?type=${encodeURIComponent(type || "logo")}`, {
+    method: "POST",
+    headers: withAuthHeaders(token),
+    body: form,
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) {
+    const err = new Error(data?.message || `Error subiendo imagen: ${res.status}`);
+    err.status = res.status;
+    err.code = data?.code;
+    throw err;
+  }
+  return data;
+};
+
 export const fetchPublicStore = async (slug) => {
   const res = await fetch(`${getApiUrl()}/api/stores/${encodeURIComponent(slug)}`);
   const data = await parseJsonResponse(res);

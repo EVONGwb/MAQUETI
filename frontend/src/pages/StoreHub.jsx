@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyStore, upsertMyStore, updateProduct } from "../services/api";
+import { fetchMyStore, resolveImageSrc, uploadMyStoreAsset, upsertMyStore, updateProduct } from "../services/api";
 import { priceLabel } from "../services/format";
 
 const statusLabel = (s) => {
@@ -16,6 +16,7 @@ const statusLabel = (s) => {
 export default function StoreHub({ token, user, myProducts, refreshData, onRequireAuth }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [store, setStore] = useState(null);
   const [needsSubscription, setNeedsSubscription] = useState(false);
   const [lockedByAdmin, setLockedByAdmin] = useState(false);
@@ -25,12 +26,18 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
   const [form, setForm] = useState({
     name: "",
     description: "",
+    welcomeMessage: "",
     logoUrl: "",
     bannerUrl: "",
     themePrimary: "#2563eb",
     themeAccent: "#0f172a",
     themeBackground: "#ffffff",
   });
+
+  const [logoFile, setLogoFile] = useState(null);
+  const [bannerFile, setBannerFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
+  const [bannerPreview, setBannerPreview] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +59,7 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
             ...prev,
             name: data.store.name || "",
             description: data.store.description || "",
+            welcomeMessage: data.store.welcomeMessage || "",
             logoUrl: data.store.logoUrl || "",
             bannerUrl: data.store.bannerUrl || "",
             themePrimary: data.store.themePrimary || "#2563eb",
@@ -88,11 +96,87 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
     };
   }, [token]);
 
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(logoFile);
+    setLogoPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [logoFile]);
+
+  useEffect(() => {
+    if (!bannerFile) {
+      setBannerPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(bannerFile);
+    setBannerPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [bannerFile]);
+
+  const normalizeHex = (value, fallback) => {
+    const raw = String(value || "").trim();
+    if (!raw) return fallback;
+    const v = raw.startsWith("#") ? raw : `#${raw}`;
+    const ok = /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(v);
+    return ok ? v.toLowerCase() : fallback;
+  };
+
   const saveStore = async () => {
+    if (!token) return;
+    setSaving(true);
     setError("");
     try {
-      const data = await upsertMyStore(token, form);
+      if (!form.name || !String(form.name).trim()) {
+        setError("El nombre de la tienda es obligatorio.");
+        return;
+      }
+
+      let logoUrl = form.logoUrl || "";
+      let bannerUrl = form.bannerUrl || "";
+
+      if (logoFile) {
+        const up = await uploadMyStoreAsset(token, logoFile, "logo");
+        logoUrl = up?.url || logoUrl;
+      }
+      if (bannerFile) {
+        const up = await uploadMyStoreAsset(token, bannerFile, "banner");
+        bannerUrl = up?.url || bannerUrl;
+      }
+
+      if (!logoUrl) {
+        setError("Sube un logo para que tu tienda se vea profesional.");
+        return;
+      }
+      if (!bannerUrl) {
+        setError("Sube un banner: es la primera impresión de tu tienda.");
+        return;
+      }
+
+      const payload = {
+        ...form,
+        logoUrl,
+        bannerUrl,
+        themePrimary: normalizeHex(form.themePrimary, "#2563eb"),
+        themeAccent: normalizeHex(form.themeAccent, "#0f172a"),
+        themeBackground: normalizeHex(form.themeBackground, "#ffffff"),
+      };
+
+      const data = await upsertMyStore(token, payload);
       setStore(data.store);
+      setForm((p) => ({
+        ...p,
+        logoUrl: data?.store?.logoUrl || logoUrl,
+        bannerUrl: data?.store?.bannerUrl || bannerUrl,
+      }));
+      setLogoFile(null);
+      setBannerFile(null);
       setTab("dashboard");
     } catch (e) {
       if (e?.status === 402 || e?.code === "STORE_SUBSCRIPTION_REQUIRED") {
@@ -104,7 +188,216 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
         return;
       }
       setError(e?.message || "No se pudo guardar la tienda");
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const bannerSrc = bannerPreview || (form.bannerUrl ? resolveImageSrc(form.bannerUrl) : "");
+  const logoSrc = logoPreview || (form.logoUrl ? resolveImageSrc(form.logoUrl) : "");
+
+  const steps = useMemo(() => {
+    const okName = Boolean(String(form.name || "").trim());
+    const okImages = Boolean((logoFile || form.logoUrl) && (bannerFile || form.bannerUrl));
+    const okDesc = Boolean(String(form.description || "").trim());
+    const okColors = Boolean(String(form.themePrimary || "").trim() && String(form.themeAccent || "").trim());
+    const score = [okName, okImages, okDesc, okColors].filter(Boolean).length;
+    return { okName, okImages, okDesc, okColors, score };
+  }, [form, logoFile, bannerFile]);
+
+  const StoreDesigner = ({ mode }) => {
+    return (
+      <div className="store-create">
+        <div className="store-create-hero">
+          <div>
+            <h2>{mode === "create" ? "Crea tu Tienda" : "Diseña tu Tienda"}</h2>
+            <p>{mode === "create" ? "Diseña tu marca y empieza a vender en MAQUETI." : "Ajusta tu identidad visual y tu perfil de tienda."}</p>
+          </div>
+          <div className="store-create-progress-wrap" aria-label="Progreso">
+            <div className="store-create-progress">
+              <div className="store-create-progress-bar" style={{ width: `${(steps.score / 4) * 100}%` }} />
+            </div>
+            <div className="store-create-progress-meta">{`${steps.score}/4 listo`}</div>
+          </div>
+        </div>
+
+        {error ? <div className="msg">{error}</div> : null}
+
+        <div className="store-create-grid">
+          <div className="store-preview">
+            <div className="store-preview-card" style={{ background: normalizeHex(form.themeBackground, "#ffffff") }}>
+              <div
+                className="store-preview-banner"
+                style={
+                  bannerSrc
+                    ? { backgroundImage: `url(${bannerSrc})`, backgroundSize: "cover", backgroundPosition: "center" }
+                    : { background: "linear-gradient(135deg, rgba(37,99,235,0.25), rgba(15,23,42,0.15))" }
+                }
+              />
+              <div className="store-preview-body">
+                <div
+                  className="store-preview-logo"
+                  style={
+                    logoSrc
+                      ? { backgroundImage: `url(${logoSrc})`, backgroundSize: "cover", backgroundPosition: "center" }
+                      : { background: normalizeHex(form.themePrimary, "#2563eb") }
+                  }
+                />
+                <div className="store-preview-title" style={{ color: normalizeHex(form.themeAccent, "#0f172a") }}>
+                  {String(form.name || "").trim() || "Mi Tienda"}
+                </div>
+                <div className="store-preview-text">{String(form.welcomeMessage || "").trim() || "Bienvenidos a mi tienda online."}</div>
+                <div className="store-preview-sub">{String(form.description || "").trim() || "Aquí encontrarás productos al mejor precio."}</div>
+              </div>
+            </div>
+            <div className="store-preview-hint">Vista previa en tiempo real</div>
+          </div>
+
+          <div className="store-create-form">
+            <div className="store-block">
+              <div className="store-block-head">
+                <h3>Identidad de la tienda</h3>
+                <p>El nombre y el mensaje ayudan a que tu marca se recuerde.</p>
+              </div>
+              <div className="store-field">
+                <label>Nombre de la tienda</label>
+                <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Ej: Evongo Store" />
+              </div>
+              <div className="store-field">
+                <label>Mensaje de bienvenida (opcional)</label>
+                <input value={form.welcomeMessage} onChange={(e) => setForm((p) => ({ ...p, welcomeMessage: e.target.value }))} placeholder="Ej: Envíos rápidos y atención premium" />
+              </div>
+            </div>
+
+            <div className="store-block">
+              <div className="store-block-head">
+                <h3>Imágenes de la tienda</h3>
+                <p>Un buen logo y banner elevan tu tienda al instante.</p>
+              </div>
+
+              <div className="store-upload-row">
+                <div className="store-upload">
+                  <div className="store-upload-label">Logo</div>
+                  <label className="store-upload-card">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setLogoFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                    />
+                    <div
+                      className="store-upload-preview"
+                      style={
+                        logoSrc
+                          ? { backgroundImage: `url(${logoSrc})`, backgroundSize: "cover", backgroundPosition: "center" }
+                          : { background: "rgba(15, 23, 42, 0.05)" }
+                      }
+                    />
+                    <div className="store-upload-cta">{logoSrc ? "Cambiar logo" : "Subir logo"}</div>
+                  </label>
+                  {logoSrc ? (
+                    <button
+                      className="store-upload-remove"
+                      type="button"
+                      onClick={() => {
+                        setLogoFile(null);
+                        setForm((p) => ({ ...p, logoUrl: "" }));
+                      }}
+                    >
+                      Quitar
+                    </button>
+                  ) : (
+                    <div className="store-upload-hint">Un logo profesional genera confianza.</div>
+                  )}
+                </div>
+
+                <div className="store-upload">
+                  <div className="store-upload-label">Banner</div>
+                  <label className="store-upload-card">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setBannerFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                    />
+                    <div
+                      className="store-upload-preview store-upload-preview-banner"
+                      style={
+                        bannerSrc
+                          ? { backgroundImage: `url(${bannerSrc})`, backgroundSize: "cover", backgroundPosition: "center" }
+                          : { background: "rgba(15, 23, 42, 0.05)" }
+                      }
+                    />
+                    <div className="store-upload-cta">{bannerSrc ? "Cambiar banner" : "Subir banner"}</div>
+                  </label>
+                  {bannerSrc ? (
+                    <button
+                      className="store-upload-remove"
+                      type="button"
+                      onClick={() => {
+                        setBannerFile(null);
+                        setForm((p) => ({ ...p, bannerUrl: "" }));
+                      }}
+                    >
+                      Quitar
+                    </button>
+                  ) : (
+                    <div className="store-upload-hint">El banner es tu primera impresión.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="store-block">
+              <div className="store-block-head">
+                <h3>Descripción</h3>
+                <p>Cuenta qué vendes y por qué tu tienda es especial.</p>
+              </div>
+              <div className="store-field">
+                <label>Descripción</label>
+                <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Ej: Tecnología, moda y ofertas exclusivas cada semana." />
+              </div>
+            </div>
+
+            <div className="store-block">
+              <div className="store-block-head">
+                <h3>Estilo visual</h3>
+                <p>Personaliza tus colores y verás el cambio en la vista previa.</p>
+              </div>
+
+              <div className="store-color-grid">
+                <div className="store-color">
+                  <div className="store-color-label">Color principal</div>
+                  <div className="store-color-row">
+                    <input type="color" value={normalizeHex(form.themePrimary, "#2563eb")} onChange={(e) => setForm((p) => ({ ...p, themePrimary: e.target.value }))} />
+                    <input value={form.themePrimary} onChange={(e) => setForm((p) => ({ ...p, themePrimary: e.target.value }))} placeholder="#2563eb" />
+                  </div>
+                </div>
+                <div className="store-color">
+                  <div className="store-color-label">Color secundario</div>
+                  <div className="store-color-row">
+                    <input type="color" value={normalizeHex(form.themeAccent, "#0f172a")} onChange={(e) => setForm((p) => ({ ...p, themeAccent: e.target.value }))} />
+                    <input value={form.themeAccent} onChange={(e) => setForm((p) => ({ ...p, themeAccent: e.target.value }))} placeholder="#0f172a" />
+                  </div>
+                </div>
+                <div className="store-color">
+                  <div className="store-color-label">Color de fondo</div>
+                  <div className="store-color-row">
+                    <input type="color" value={normalizeHex(form.themeBackground, "#ffffff")} onChange={(e) => setForm((p) => ({ ...p, themeBackground: e.target.value }))} />
+                    <input value={form.themeBackground} onChange={(e) => setForm((p) => ({ ...p, themeBackground: e.target.value }))} placeholder="#ffffff" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="store-cta">
+              <button className="primary-btn store-cta-btn" type="button" disabled={saving} onClick={saveStore}>
+                {saving ? "Creando…" : mode === "create" ? "Crear mi tienda" : "Guardar cambios"}
+              </button>
+              <div className="store-cta-hint">Revisaremos tus datos y podrás editarlo después.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const productsByStatus = useMemo(() => {
@@ -177,24 +470,7 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
   if (!store) {
     return (
       <div className="view-container">
-        <h2>Crea tu Tienda</h2>
-        {error ? <div className="msg">{error}</div> : null}
-        <div className="add-form">
-          <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Nombre de la tienda" />
-          <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Descripción" />
-          <div className="row-inputs">
-            <input value={form.logoUrl} onChange={(e) => setForm((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="URL del logo" />
-            <input value={form.bannerUrl} onChange={(e) => setForm((p) => ({ ...p, bannerUrl: e.target.value }))} placeholder="URL del banner" />
-          </div>
-          <div className="row-inputs">
-            <input value={form.themePrimary} onChange={(e) => setForm((p) => ({ ...p, themePrimary: e.target.value }))} placeholder="Color primario (#2563eb)" />
-            <input value={form.themeAccent} onChange={(e) => setForm((p) => ({ ...p, themeAccent: e.target.value }))} placeholder="Color acento (#0f172a)" />
-          </div>
-          <input value={form.themeBackground} onChange={(e) => setForm((p) => ({ ...p, themeBackground: e.target.value }))} placeholder="Color fondo (#ffffff)" />
-          <button className="primary-btn" type="button" onClick={saveStore}>
-            Crear tienda
-          </button>
-        </div>
+        <StoreDesigner mode="create" />
       </div>
     );
   }
@@ -206,12 +482,12 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
       <div className="store-header" style={{ margin: 0, borderRadius: 24, overflow: "hidden" }}>
         <div
           className="store-banner placeholder-img"
-          style={store.bannerUrl ? { backgroundImage: `url(${store.bannerUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+          style={store.bannerUrl ? { backgroundImage: `url(${resolveImageSrc(store.bannerUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
         />
         <div className="store-profile">
           <div
             className="store-avatar"
-            style={store.logoUrl ? { backgroundImage: `url(${store.logoUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+            style={store.logoUrl ? { backgroundImage: `url(${resolveImageSrc(store.logoUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
           />
           <div>
             <h2>{store.name}</h2>
@@ -258,22 +534,7 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
       ) : null}
 
       {tab === "design" ? (
-        <div className="add-form">
-          <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Nombre de la tienda" />
-          <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Descripción" />
-          <div className="row-inputs">
-            <input value={form.logoUrl} onChange={(e) => setForm((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="URL del logo" />
-            <input value={form.bannerUrl} onChange={(e) => setForm((p) => ({ ...p, bannerUrl: e.target.value }))} placeholder="URL del banner" />
-          </div>
-          <div className="row-inputs">
-            <input value={form.themePrimary} onChange={(e) => setForm((p) => ({ ...p, themePrimary: e.target.value }))} placeholder="Color primario" />
-            <input value={form.themeAccent} onChange={(e) => setForm((p) => ({ ...p, themeAccent: e.target.value }))} placeholder="Color acento" />
-          </div>
-          <input value={form.themeBackground} onChange={(e) => setForm((p) => ({ ...p, themeBackground: e.target.value }))} placeholder="Color fondo" />
-          <button className="primary-btn" type="button" onClick={saveStore}>
-            Guardar cambios
-          </button>
-        </div>
+        <StoreDesigner mode="edit" />
       ) : null}
 
       {tab === "products" ? (

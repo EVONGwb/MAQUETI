@@ -7,6 +7,7 @@ const storeSchema = new mongoose.Schema(
     slug: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
     description: { type: String, default: "" },
+    welcomeMessage: { type: String, default: "" },
     logoUrl: { type: String, default: "" },
     bannerUrl: { type: String, default: "" },
     themePrimary: { type: String, default: "#2563eb" },

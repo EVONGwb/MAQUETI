@@ -70,7 +70,7 @@ const upsertMyStore = async (req, res) => {
     const ownerId = req.user?.id;
     if (!ownerId) return res.status(401).json({ message: "Token requerido" });
 
-    const { name, description, logoUrl, bannerUrl, themePrimary, themeAccent, themeBackground } = req.body || {};
+    const { name, description, welcomeMessage, logoUrl, bannerUrl, themePrimary, themeAccent, themeBackground } = req.body || {};
     if (!name || !String(name).trim()) return res.status(400).json({ message: "Nombre de tienda requerido" });
 
     const now = Date.now();
@@ -85,6 +85,7 @@ const upsertMyStore = async (req, res) => {
         slug,
         name: String(name).trim(),
         description: String(description || ""),
+        welcomeMessage: String(welcomeMessage || ""),
         logoUrl: String(logoUrl || ""),
         bannerUrl: String(bannerUrl || ""),
         themePrimary: String(themePrimary || "#2563eb"),
@@ -104,6 +105,7 @@ const upsertMyStore = async (req, res) => {
           slug,
           name: String(name).trim(),
           description: String(description || ""),
+          welcomeMessage: String(welcomeMessage || ""),
           logoUrl: String(logoUrl || ""),
           bannerUrl: String(bannerUrl || ""),
           themePrimary: String(themePrimary || "#2563eb"),
@@ -117,6 +119,20 @@ const upsertMyStore = async (req, res) => {
     return res.json({ message: "Tienda actualizada", store });
   } catch {
     return res.status(500).json({ message: "Error al guardar tienda" });
+  }
+};
+
+const uploadMyStoreAsset = async (req, res) => {
+  try {
+    const ownerId = req.user?.id;
+    if (!ownerId) return res.status(401).json({ message: "Token requerido" });
+    const kind = String(req.query.type || "logo").toLowerCase();
+    if (kind !== "logo" && kind !== "banner") return res.status(400).json({ message: "Tipo inválido" });
+    if (!req.file) return res.status(400).json({ message: "Archivo requerido" });
+    const url = `/uploads/store/${req.file.filename}`;
+    return res.status(201).json({ message: "Imagen subida", type: kind, url });
+  } catch {
+    return res.status(500).json({ message: "Error subiendo imagen" });
   }
 };
 
@@ -144,4 +160,5 @@ module.exports = {
   getMyStore,
   upsertMyStore,
   getPublicStoreBySlug,
+  uploadMyStoreAsset,
 };
