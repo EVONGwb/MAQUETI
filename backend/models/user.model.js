@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema(
     storePlan: { type: String, default: null },
     storeSubscriptionEndsAt: { type: Number, default: null },
     storePaymentsUnlocked: { type: Boolean, default: false, index: true },
+    avatarUrl: { type: String, default: null },
+    bannerUrl: { type: String, default: null },
+    themeColor: { type: String, default: null },
   },
   { versionKey: false }
 );

@@ -42,6 +42,26 @@ export const fetchProductById = async (id) => {
   return data;
 };
 
+export const fetchMyProfile = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/users/me`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando perfil: ${res.status}`);
+  return data;
+};
+
+export const updateMyProfile = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/users/me`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando perfil: ${res.status}`);
+  return data;
+};
+
 const withAuthHeaders = (token, extra = {}) => {
   const headers = { ...extra };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -92,6 +112,24 @@ export const uploadMyStoreAsset = async (token, file, type) => {
     throw err;
   }
   return data;
+};
+
+export const uploadImageToCloudinary = async (file, { folder } = {}) => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  if (!cloudName || !uploadPreset) throw new Error("Cloudinary no está configurado");
+  if (typeof File !== "undefined" && !(file instanceof File)) throw new Error("Archivo inválido");
+
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", uploadPreset);
+  if (folder) fd.append("folder", String(folder));
+
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: "POST", body: fd });
+  const j = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(j?.error?.message || "No se pudo subir la imagen");
+  if (!j?.secure_url) throw new Error("No se pudo obtener la URL de la imagen");
+  return j.secure_url;
 };
 
 export const fetchPublicStore = async (slug) => {

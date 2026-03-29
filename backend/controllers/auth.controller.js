@@ -47,6 +47,9 @@ const passwordRegister = async (req, res) => {
         storePlan: created.storePlan || null,
         storeSubscriptionEndsAt: created.storeSubscriptionEndsAt || null,
         storePaymentsUnlocked: Boolean(created.storePaymentsUnlocked),
+        avatarUrl: created.avatarUrl || null,
+        bannerUrl: created.bannerUrl || null,
+        themeColor: created.themeColor || null,
       },
     });
   } catch (error) {
@@ -95,6 +98,9 @@ const passwordLogin = async (req, res) => {
         storePlan: user.storePlan || null,
         storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,
         storePaymentsUnlocked: Boolean(user.storePaymentsUnlocked),
+        avatarUrl: user.avatarUrl || null,
+        bannerUrl: user.bannerUrl || null,
+        themeColor: user.themeColor || null,
       },
     });
   } catch (error) {
@@ -143,7 +149,7 @@ const googleLogin = async (req, res) => {
         $setOnInsert: { id: generateNumericId() },
       },
       { new: true, upsert: true }
-    ).select({ id: 1, name: 1, email: 1, isAdmin: 1, status: 1, storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1 });
+    ).select({ id: 1, name: 1, email: 1, isAdmin: 1, status: 1, storeSubscriptionStatus: 1, storePlan: 1, storeSubscriptionEndsAt: 1, storePaymentsUnlocked: 1, avatarUrl: 1, bannerUrl: 1, themeColor: 1 });
 
     if (!user) {
       return res.status(500).json({
@@ -171,6 +177,9 @@ const googleLogin = async (req, res) => {
         storePlan: user.storePlan || null,
         storeSubscriptionEndsAt: user.storeSubscriptionEndsAt || null,
         storePaymentsUnlocked: Boolean(user.storePaymentsUnlocked),
+        avatarUrl: user.avatarUrl || null,
+        bannerUrl: user.bannerUrl || null,
+        themeColor: user.themeColor || null,
       },
     });
   } catch (error) {

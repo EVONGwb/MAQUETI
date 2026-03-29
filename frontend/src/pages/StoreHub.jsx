@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchMyStore, resolveImageSrc, uploadMyStoreAsset, upsertMyStore, updateProduct } from "../services/api";
+import { fetchMyStore, resolveImageSrc, uploadImageToCloudinary, uploadMyStoreAsset, upsertMyStore, updateProduct } from "../services/api";
 import { priceLabel } from "../services/format";
 
 const statusLabel = (s) => {
@@ -142,12 +142,20 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
       let bannerUrl = form.bannerUrl || "";
 
       if (logoFile) {
-        const up = await uploadMyStoreAsset(token, logoFile, "logo");
-        logoUrl = up?.url || logoUrl;
+        if (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME && import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET) {
+          logoUrl = await uploadImageToCloudinary(logoFile, { folder: "maqueti/store" });
+        } else {
+          const up = await uploadMyStoreAsset(token, logoFile, "logo");
+          logoUrl = up?.url || logoUrl;
+        }
       }
       if (bannerFile) {
-        const up = await uploadMyStoreAsset(token, bannerFile, "banner");
-        bannerUrl = up?.url || bannerUrl;
+        if (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME && import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET) {
+          bannerUrl = await uploadImageToCloudinary(bannerFile, { folder: "maqueti/store" });
+        } else {
+          const up = await uploadMyStoreAsset(token, bannerFile, "banner");
+          bannerUrl = up?.url || bannerUrl;
+        }
       }
 
       if (!logoUrl) {

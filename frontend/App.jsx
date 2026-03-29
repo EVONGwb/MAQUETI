@@ -1373,6 +1373,30 @@ function App() {
       if (tkn && usr?.id) {
         const mine = await fetchMyProducts(tkn, usr.id);
         setMyProducts(mine);
+        try {
+          const meRes = await fetch(`${getApiUrl()}/api/users/me`, {
+            headers: { Authorization: `Bearer ${tkn}` },
+          });
+          const meData = await parseJsonResponse(meRes);
+          if (meRes.ok && meData?.user) {
+            setUser(meData.user);
+            try {
+              localStorage.setItem("userName", meData.user.name || "");
+              localStorage.setItem("userIsAdmin", String(Boolean(meData.user.isAdmin)));
+              localStorage.setItem("userStoreSubscriptionStatus", String(meData.user.storeSubscriptionStatus || "none"));
+              localStorage.setItem("userStorePlan", meData.user.storePlan ? String(meData.user.storePlan) : "");
+              localStorage.setItem("userStoreSubscriptionEndsAt", meData.user.storeSubscriptionEndsAt ? String(Number(meData.user.storeSubscriptionEndsAt)) : "");
+              localStorage.setItem("userStorePaymentsUnlocked", String(Boolean(meData.user.storePaymentsUnlocked)));
+              localStorage.setItem("userAvatarUrl", meData.user.avatarUrl ? String(meData.user.avatarUrl) : "");
+              localStorage.setItem("userBannerUrl", meData.user.bannerUrl ? String(meData.user.bannerUrl) : "");
+              localStorage.setItem("userThemeColor", meData.user.themeColor ? String(meData.user.themeColor) : "");
+            } catch {
+              undefined;
+            }
+          }
+        } catch {
+          undefined;
+        }
       } else {
         setMyProducts([]);
       }
@@ -1393,6 +1417,9 @@ function App() {
     const storedStorePlan = localStorage.getItem("userStorePlan") || "";
     const storedStoreSubscriptionEndsAt = localStorage.getItem("userStoreSubscriptionEndsAt") || "";
     const storedStorePaymentsUnlocked = localStorage.getItem("userStorePaymentsUnlocked") || "";
+    const storedAvatarUrl = localStorage.getItem("userAvatarUrl") || "";
+    const storedBannerUrl = localStorage.getItem("userBannerUrl") || "";
+    const storedThemeColor = localStorage.getItem("userThemeColor") || "";
 
     if (storedToken && !isJwtExpired(storedToken)) {
       setIsLogged(true);
@@ -1406,6 +1433,9 @@ function App() {
         storePlan: storedStorePlan || null,
         storeSubscriptionEndsAt: storedStoreSubscriptionEndsAt ? Number(storedStoreSubscriptionEndsAt) : null,
         storePaymentsUnlocked: storedStorePaymentsUnlocked === "true",
+        avatarUrl: storedAvatarUrl || null,
+        bannerUrl: storedBannerUrl || null,
+        themeColor: storedThemeColor || null,
       };
       setUser(u);
       refreshData(storedToken, u);
@@ -1421,6 +1451,9 @@ function App() {
     localStorage.removeItem("userStorePlan");
     localStorage.removeItem("userStoreSubscriptionEndsAt");
     localStorage.removeItem("userStorePaymentsUnlocked");
+    localStorage.removeItem("userAvatarUrl");
+    localStorage.removeItem("userBannerUrl");
+    localStorage.removeItem("userThemeColor");
     refreshData("", null);
   }, []);
 
@@ -1435,6 +1468,9 @@ function App() {
     localStorage.setItem("userStorePlan", data.user.storePlan ? String(data.user.storePlan) : "");
     localStorage.setItem("userStoreSubscriptionEndsAt", data.user.storeSubscriptionEndsAt ? String(Number(data.user.storeSubscriptionEndsAt)) : "");
     localStorage.setItem("userStorePaymentsUnlocked", String(Boolean(data.user.storePaymentsUnlocked)));
+    localStorage.setItem("userAvatarUrl", data.user.avatarUrl ? String(data.user.avatarUrl) : "");
+    localStorage.setItem("userBannerUrl", data.user.bannerUrl ? String(data.user.bannerUrl) : "");
+    localStorage.setItem("userThemeColor", data.user.themeColor ? String(data.user.themeColor) : "");
     setToken(data.token);
     setUser(data.user);
     setIsLogged(true);
