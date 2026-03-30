@@ -13,12 +13,13 @@ import InstallPrompt from "./src/components/InstallPrompt";
 import StoreHub from "./src/pages/StoreHub";
 import PublicStorePage from "./src/pages/PublicStore";
 import ProfilePage from "./src/pages/Profile";
+import PromoteProductPage from "./src/pages/PromoteProduct";
 import AdminLogin from "./src/pages/admin/AdminLogin";
 import AdminDashboard from "./src/pages/admin/AdminDashboard";
 import AdminManage from "./src/pages/admin/AdminManage";
 import AdminSettingsAudit from "./src/pages/admin/AdminSettingsAudit";
 import GlobalSearchHeader from "./src/components/GlobalSearchHeader";
-import { getApiUrl, parseJsonResponse } from "./src/services/api";
+import { fetchPromotedProducts, getApiUrl, parseJsonResponse, resolveImageSrc } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
 const decodeJwtPayload = (token) => {
@@ -330,12 +331,47 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
 
 const ExploreView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory }) => {
   const navigate = useNavigate();
+  const [promoted, setPromoted] = useState([]);
+  const [promotedLoading, setPromotedLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const placement = search ? "search" : activeCategory ? "category" : "";
+    if (!placement) {
+      setPromoted([]);
+      return undefined;
+    }
+    const run = async () => {
+      setPromotedLoading(true);
+      try {
+        const data = await fetchPromotedProducts({ placement, category: activeCategory || undefined, limit: 3 });
+        const list = Array.isArray(data?.products) ? data.products : [];
+        if (!cancelled) setPromoted(list);
+      } catch {
+        if (!cancelled) setPromoted([]);
+      } finally {
+        if (!cancelled) setPromotedLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [search, activeCategory]);
+
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
     if (!search) return byCategory;
     const q = search.toLowerCase();
     return byCategory.filter((p) => String(p.title || "").toLowerCase().includes(q) || String(p.description || "").toLowerCase().includes(q));
   }, [products, search, activeCategory]);
+
+  const combined = useMemo(() => {
+    if (!promoted.length) return filtered;
+    const ids = new Set(promoted.map((p) => String(p.id)));
+    const rest = filtered.filter((p) => !ids.has(String(p.id)));
+    return [...promoted, ...rest];
+  }, [filtered, promoted]);
 
   return (
     <div className="view-container">
@@ -364,17 +400,19 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
       </div>
 
       <h2>Explorar {activeCategory ? `- ${activeCategory}` : ""}</h2>
-      {filtered.length === 0 ? <div className="empty-state">No se encontraron productos con esos filtros.</div> : null}
+      {promotedLoading ? <div className="empty-state">Cargando destacados…</div> : null}
+      {combined.length === 0 ? <div className="empty-state">No se encontraron productos con esos filtros.</div> : null}
       <div className="feed-list">
-        {filtered.map((p) => (
+        {combined.map((p) => (
           <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`)} style={{cursor: 'pointer'}}>
             <div 
               className="feed-img placeholder-img"
-              style={p.imageUrl ? { backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              style={p.imageUrl ? { backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
             ></div>
             <div className="feed-details">
               <h4>{p.title}</h4>
               <div className="product-meta">
+                {p.isPromoted ? <span className="tag zone">Promocionado</span> : null}
                 <span className="tag new">{p.condition || "—"}</span>
                 {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
               </div>
@@ -1704,6 +1742,16 @@ function App() {
                 <ProfilePage user={user} myProducts={myProducts} token={token} refreshData={refreshData} onLogout={handleLogout} onRegisterPasskey={handleRegisterPasskey} passkeyMessage={passkeyMessage} />
               ) : (
                 <AuthRequiredView title="Perfil" message="Regístrate o inicia sesión para acceder a tu perfil." onLogin={() => openAuth("Regístrate o inicia sesión para acceder a tu perfil.")} />
+              )
+            }
+          />
+          <Route
+            path="/promote"
+            element={
+              isLogged ? (
+                <PromoteProductPage token={token} myProducts={myProducts} />
+              ) : (
+                <AuthRequiredView title="Promocionar" message="Regístrate o inicia sesión para promocionar productos." onLogin={() => openAuth("Regístrate o inicia sesión para promocionar productos.")} />
               )
             }
           />

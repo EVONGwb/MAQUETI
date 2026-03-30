@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
-import { createOrGetConversation, fetchPublicStores, resolveImageSrc } from "../services/api";
+import { createOrGetConversation, fetchPromotedProducts, fetchPublicStores, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
@@ -10,6 +10,8 @@ export default function HomePage({ products, search, setSearch, categories, acti
   const [chatError, setChatError] = useState("");
   const [storesLoading, setStoresLoading] = useState(true);
   const [recommendedStores, setRecommendedStores] = useState([]);
+  const [promotedLoading, setPromotedLoading] = useState(true);
+  const [promotedProducts, setPromotedProducts] = useState([]);
 
   const reveal = useMemo(
     () => ({
@@ -117,6 +119,28 @@ export default function HomePage({ products, search, setSearch, categories, acti
         if (!cancelled) setRecommendedStores([]);
       } finally {
         if (!cancelled) setStoresLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setPromotedLoading(true);
+      try {
+        const data = await fetchPromotedProducts({ placement: "home", limit: 3 });
+        const list = Array.isArray(data?.products) ? data.products : [];
+        if (!cancelled) setPromotedProducts(list);
+      } catch {
+        if (!cancelled) setPromotedProducts([]);
+      } finally {
+        if (!cancelled) setPromotedLoading(false);
       }
     };
 
@@ -279,6 +303,58 @@ export default function HomePage({ products, search, setSearch, categories, acti
                     </motion.article>
                   ))}
           </div>
+        </motion.section>
+
+        <motion.section className="st-section" variants={revealFast}>
+          <div className="st-section-head">
+            <div>
+              <p className="st-section-kicker">🚀 Promocionado</p>
+              <h3>Destacados en Home</h3>
+            </div>
+            <button className="st-text-btn" type="button" onClick={() => navigate("/explore")}>
+              Ver más
+            </button>
+          </div>
+
+          {promotedLoading ? (
+            <div className="st-products-row">
+              {productSkeletons.slice(0, 3).map((s) => (
+                <div key={s.id} className="st-product-card st-skeleton-card st-product-card-compact">
+                  <div className="st-product-image-wrap">
+                    <div className="st-skeleton st-skeleton-img st-skeleton-img-compact" />
+                  </div>
+                  <div className="st-product-info">
+                    <div className="st-skeleton st-skeleton-line st-w-40" />
+                    <div className="st-skeleton st-skeleton-line st-w-80" />
+                    <div className="st-skeleton st-skeleton-line st-w-55" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : promotedProducts.length === 0 ? (
+            <div className="st-empty-state">No hay productos promocionados ahora mismo.</div>
+          ) : (
+            <motion.div className="st-products-row" variants={stagger}>
+              {promotedProducts.map((product) => (
+                <motion.article
+                  key={product.id}
+                  className="st-product-card st-product-card-compact"
+                  variants={revealFast}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <div className="st-product-image-wrap">
+                    <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
+                    <span className="st-badge">Promocionado</span>
+                  </div>
+                  <div className="st-product-info">
+                    <h4>{product.title}</h4>
+                    <p>{priceLabel(product.price)}</p>
+                  </div>
+                </motion.article>
+              ))}
+            </motion.div>
+          )}
         </motion.section>
 
         <motion.section className="st-section" id="st-trending" variants={revealFast}>

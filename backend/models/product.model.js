@@ -16,6 +16,11 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, default: null },
     sku: { type: String, default: null },
     status: { type: String, default: "published", index: true },
+    isPromoted: { type: Boolean, default: false, index: true },
+    promotionType: { type: String, default: null, index: true },
+    promotionStart: { type: Number, default: null, index: true },
+    promotionEnd: { type: Number, default: null, index: true },
+    paymentStatus: { type: String, default: null, index: true },
     createdAt: { type: Number, required: true, index: true },
   },
   { versionKey: false }

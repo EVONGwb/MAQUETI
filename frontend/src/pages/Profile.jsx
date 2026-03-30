@@ -396,6 +396,9 @@ export default function ProfilePage({ user, myProducts, token, refreshData, onLo
                       <button className="pf-mini" type="button" disabled={busyId === p.id} onClick={() => openEdit(p)}>
                         <Pencil size={16} /> Editar
                       </button>
+                      <button className="pf-mini" type="button" disabled={busyId === p.id} onClick={() => navigate(`/promote?productId=${encodeURIComponent(p.id)}`)}>
+                        <StoreIcon size={16} /> Promocionar
+                      </button>
                       <button className="pf-mini danger" type="button" disabled={busyId === p.id} onClick={() => removeOne(p.id)}>
                         <Trash2 size={16} /> Eliminar
                       </button>

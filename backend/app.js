@@ -18,6 +18,7 @@ const productRoutes = require("./routes/productRoutes");
 const conversationRoutes = require("./routes/chatRoutes");
 const storeRoutes = require("./routes/storeRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const promotionRoutes = require("./routes/promotionRoutes");
 
 app.use("/api", testRoutes); 
 app.use("/api", authRoutes); 
@@ -26,6 +27,7 @@ app.use("/api", userRoutes);
 app.use("/api", productRoutes); 
 app.use("/api", storeRoutes);
 app.use("/api", adminRoutes);
+app.use("/api", promotionRoutes);
 app.use("/api/conversations", conversationRoutes);
 
 const frontendDistPath = path.join(__dirname, "../frontend/dist");

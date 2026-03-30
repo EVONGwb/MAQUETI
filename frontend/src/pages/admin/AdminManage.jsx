@@ -6,6 +6,7 @@ import ProductsModule from "./modules/ProductsModule.jsx";
 import StoresModule from "./modules/StoresModule.jsx";
 import ChatsModule from "./modules/ChatsModule.jsx";
 import AdsModule from "./modules/AdsModule.jsx";
+import PromotionsModule from "./modules/PromotionsModule.jsx";
 
 const normalizeModule = (raw) => {
   const v = String(raw || "").trim().toLowerCase();
@@ -14,6 +15,7 @@ const normalizeModule = (raw) => {
   if (v === "stores") return "stores";
   if (v === "chats") return "chats";
   if (v === "ads") return "ads";
+  if (v === "promotions") return "promotions";
   return "users";
 };
 
@@ -27,6 +29,7 @@ export default function AdminManage({ token, user, onLogout }) {
     stores: "Gestión: Tiendas",
     chats: "Gestión: Chats",
     ads: "Gestión: Publicidad",
+    promotions: "Gestión: Promociones",
   };
 
   return (
@@ -36,6 +39,7 @@ export default function AdminManage({ token, user, onLogout }) {
       {module === "stores" ? <StoresModule token={token} /> : null}
       {module === "chats" ? <ChatsModule token={token} /> : null}
       {module === "ads" ? <AdsModule token={token} /> : null}
+      {module === "promotions" ? <PromotionsModule token={token} /> : null}
     </AdminShell>
   );
 }

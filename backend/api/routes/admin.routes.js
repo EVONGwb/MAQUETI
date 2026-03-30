@@ -23,6 +23,7 @@ const {
   deleteAdminAd,
   listAdminAudit,
 } = require("../../controllers/admin.controller");
+const { listAdminPromotions, patchAdminPromotion, getAdminPromotionPricing, patchAdminPromotionPricing } = require("../../controllers/promotion.controller");
 
 router.patch("/admin/users/:id/store-access", authMiddleware, adminMiddleware, updateUserStoreAccess);
 router.get("/admin/users", authMiddleware, adminMiddleware, listAdminUsers);
@@ -48,5 +49,10 @@ router.patch("/admin/ads/:id", authMiddleware, adminMiddleware, updateAdminAd);
 router.delete("/admin/ads/:id", authMiddleware, adminMiddleware, deleteAdminAd);
 
 router.get("/admin/audit", authMiddleware, adminMiddleware, listAdminAudit);
+
+router.get("/admin/promotions", authMiddleware, adminMiddleware, listAdminPromotions);
+router.patch("/admin/promotions/:id", authMiddleware, adminMiddleware, patchAdminPromotion);
+router.get("/admin/promotion-config", authMiddleware, adminMiddleware, getAdminPromotionPricing);
+router.patch("/admin/promotion-config", authMiddleware, adminMiddleware, patchAdminPromotionPricing);
 
 module.exports = router;

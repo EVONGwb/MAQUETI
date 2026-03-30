@@ -33,6 +33,9 @@ export default function AdminShell({ active, user, onLogout, title, subtitle, ch
           <button className={`admin-nav-item ${active === "ads" ? "active" : ""}`} type="button" onClick={() => navigate("/admin/manage/ads")}>
             Publicidad
           </button>
+          <button className={`admin-nav-item ${active === "promotions" ? "active" : ""}`} type="button" onClick={() => navigate("/admin/manage/promotions")}>
+            Promociones
+          </button>
           <button className={`admin-nav-item ${active === "settings" ? "active" : ""}`} type="button" onClick={() => navigate("/admin/settings-audit")}>
             Configuración y Auditoría
           </button>

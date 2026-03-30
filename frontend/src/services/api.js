@@ -479,3 +479,88 @@ export const adminFetchAudit = async (token, query) => {
   if (!res.ok) throw new Error(data?.message || `Error cargando auditoría: ${res.status}`);
   return data;
 };
+
+export const fetchPromotedProducts = async ({ placement, category, limit } = {}) => {
+  const params = new URLSearchParams();
+  if (placement) params.set("placement", String(placement));
+  if (category) params.set("category", String(category));
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/promotions/featured${qs ? `?${qs}` : ""}`);
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando destacados: ${res.status}`);
+  return data;
+};
+
+export const fetchPromotionConfig = async () => {
+  const res = await fetch(`${getApiUrl()}/api/promotions/config`);
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando configuración: ${res.status}`);
+  return data;
+};
+
+export const fetchMyPromotions = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/promotions/me`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando promociones: ${res.status}`);
+  return data;
+};
+
+export const requestProductPromotion = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/promotions/request`, {
+    method: "POST",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error solicitando promoción: ${res.status}`);
+  return data;
+};
+
+export const adminFetchPromotions = async (token, query) => {
+  const params = new URLSearchParams();
+  if (query?.page) params.set("page", String(query.page));
+  if (query?.limit) params.set("limit", String(query.limit));
+  if (query?.status) params.set("status", String(query.status));
+  if (query?.promotionType) params.set("promotionType", String(query.promotionType));
+  const qs = params.toString();
+  const res = await fetch(`${getApiUrl()}/api/admin/promotions${qs ? `?${qs}` : ""}`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando promociones: ${res.status}`);
+  return data;
+};
+
+export const adminPatchPromotion = async (token, id, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/promotions/${id}`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error actualizando promoción: ${res.status}`);
+  return data;
+};
+
+export const adminGetPromotionConfig = async (token) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/promotion-config`, {
+    headers: withAuthHeaders(token),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error cargando configuración: ${res.status}`);
+  return data;
+};
+
+export const adminPatchPromotionConfig = async (token, payload) => {
+  const res = await fetch(`${getApiUrl()}/api/admin/promotion-config`, {
+    method: "PATCH",
+    headers: withAuthHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload || {}),
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || `Error guardando configuración: ${res.status}`);
+  return data;
+};
