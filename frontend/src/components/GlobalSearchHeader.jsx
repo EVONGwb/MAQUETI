@@ -29,19 +29,32 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
     }
   }, [history]);
 
-  const handleSearch = (term) => {
-    if (!term.trim()) return;
-    setSearch(term);
-    setActiveCategory("Todo");
-    setIsOpen(false);
-    navigate("/");
-    setHistory(prev => {
-      const newHist = [term, ...prev.filter(t => t !== term)].slice(0, 5);
-      return newHist;
+  const handleSearchSubmit = (term) => {
+    const trimmed = String(term || "").trim();
+    if (!trimmed) return;
+    
+    setHistory((prev) => {
+      const filtered = prev.filter((h) => h.toLowerCase() !== trimmed.toLowerCase());
+      return [trimmed, ...filtered].slice(0, 5);
     });
+    
+    setSearch(trimmed);
+    setIsOpen(false);
+    navigate("/explore");
   };
 
-  const handleClearHistory = () => setHistory([]);
+  const clearHistory = () => setHistory([]);
+
+  const removeHistoryItem = (e, item) => {
+    e.stopPropagation();
+    setHistory((prev) => prev.filter((h) => h !== item));
+  };
+
+  const handleCategoryClick = (cat) => {
+    setActiveCategory(cat);
+    setIsOpen(false);
+    navigate("/explore");
+  };
 
   // Compute suggestions based on localSearch
   const suggestions = useMemo(() => {
@@ -52,13 +65,11 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
 
   return (
     <>
-      <div className="gs-header">
-        <div className="gs-header-inner">
-          <div className="gs-search-bar" onClick={() => setIsOpen(true)}>
-            <Search size={18} className="gs-icon" />
-            <span className="gs-placeholder">
-              {localSearch || "Buscar productos, tiendas..."}
-            </span>
+      <div className="gs-header-wrap">
+        <div className="gs-search-bar" onClick={() => setIsOpen(true)}>
+          <Search size={18} className="gs-search-icon" />
+          <div className="gs-search-placeholder">
+            {search ? search : "Buscar productos, tiendas..."}
           </div>
         </div>
       </div>
@@ -72,47 +83,43 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="gs-overlay-header">
-              <div className="gs-input-wrapper">
-                <Search size={20} className="gs-icon-active" />
+            <div className="gs-overlay-top">
+              <form
+                className="gs-overlay-search"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearchSubmit(localSearch);
+                }}
+              >
+                <Search size={18} className="gs-search-icon" />
                 <input
                   ref={inputRef}
-                  autoFocus
                   type="text"
-                  placeholder="¿Qué estás buscando?"
+                  placeholder="Buscar productos, tiendas..."
                   value={localSearch}
-                  onChange={e => setLocalSearch(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") {
-                      handleSearch(localSearch);
-                    }
-                  }}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  className="gs-overlay-input"
                 />
                 {localSearch && (
-                  <button className="gs-clear-btn" onClick={() => setLocalSearch("")}>
+                  <button type="button" className="gs-clear-btn" onClick={() => setLocalSearch("")}>
                     <X size={16} />
                   </button>
                 )}
-              </div>
-              <button className="gs-cancel-btn" onClick={() => setIsOpen(false)}>
-                Cancelar
-              </button>
+              </form>
+              <button className="gs-cancel-btn" onClick={() => setIsOpen(false)}>Cancelar</button>
             </div>
 
             <div className="gs-overlay-content">
               {/* Sugerencias en tiempo real */}
               {localSearch.trim() && suggestions.length > 0 && (
                 <div className="gs-section">
-                  <h4>Sugerencias</h4>
-                  <ul className="gs-suggestions">
-                    {suggestions.map(p => (
-                      <li key={p._id} onClick={() => {
-                        setIsOpen(false);
-                        navigate(`/product/${p._id}`);
-                      }}>
+                  <h4 className="gs-section-title">Sugerencias</h4>
+                  <ul className="gs-suggestions-list">
+                    {suggestions.map((s) => (
+                      <li key={s.id} onClick={() => { navigate(`/product/${s.id}`); setIsOpen(false); }}>
                         <Search size={14} />
-                        <span>{p.name}</span>
-                        <ArrowRight size={14} className="gs-arrow" />
+                        <span>{s.title}</span>
+                        <ArrowRight size={14} className="gs-sug-arrow" />
                       </li>
                     ))}
                   </ul>
@@ -122,15 +129,18 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
               {/* Historial */}
               {!localSearch.trim() && history.length > 0 && (
                 <div className="gs-section">
-                  <div className="gs-section-header">
-                    <h4>Búsquedas recientes</h4>
-                    <button onClick={handleClearHistory}>Borrar</button>
+                  <div className="gs-section-head">
+                    <h4 className="gs-section-title">Búsquedas recientes</h4>
+                    <button className="gs-text-btn" onClick={clearHistory}>Borrar</button>
                   </div>
-                  <ul className="gs-history">
-                    {history.map((term, i) => (
-                      <li key={i} onClick={() => handleSearch(term)}>
-                        <Clock size={14} />
-                        <span>{term}</span>
+                  <ul className="gs-history-list">
+                    {history.map((h, i) => (
+                      <li key={i} onClick={() => { setLocalSearch(h); handleSearchSubmit(h); }}>
+                        <Clock size={16} className="gs-hist-icon" />
+                        <span>{h}</span>
+                        <button className="gs-hist-del" onClick={(e) => removeHistoryItem(e, h)}>
+                          <X size={14} />
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -138,22 +148,13 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
               )}
 
               {/* Categorías (siempre visibles o cuando no hay búsqueda) */}
-              {!localSearch.trim() && categories && categories.length > 0 && (
+              {!localSearch.trim() && categories?.length > 0 && (
                 <div className="gs-section">
-                  <h4>Categorías populares</h4>
+                  <h4 className="gs-section-title">Explorar categorías</h4>
                   <div className="gs-chips">
-                    {categories.slice(0, 6).map(cat => (
-                      <button
-                        key={cat}
-                        className="gs-chip"
-                        onClick={() => {
-                          setActiveCategory(cat);
-                          setSearch("");
-                          setIsOpen(false);
-                          navigate("/");
-                        }}
-                      >
-                        {cat}
+                    {categories.map((c) => (
+                      <button key={c} className="gs-chip" onClick={() => handleCategoryClick(c)}>
+                        {c}
                       </button>
                     ))}
                   </div>

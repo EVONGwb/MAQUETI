@@ -5778,8 +5778,24 @@ h3 {
 }
 
 /* OVERRIDES PARA QUE LOS STICKY HEADERS ACTUALES NO SE SOLAPEN CON EL BUSCADOR */
+/* En la home, el st-header YA contiene el buscador global, así que top: 0 está bien */
 .st-header {
-  top: var(--gs-height, 0);
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Quitamos el padding lateral general para manejarlo dentro */
+}
+.st-brand {
+  padding: 16px 24px 10px 24px;
+}
+.st-header .gs-header-wrap {
+  /* Hacemos que el buscador dentro del header no tenga position sticky, 
+     ya que el st-header entero ya es sticky */
+  position: relative;
+  top: auto;
+  border-bottom: none;
+  background: transparent;
+  padding: 0 24px 16px 24px;
 }
 .pd-topbar {
   top: var(--gs-height, 0);

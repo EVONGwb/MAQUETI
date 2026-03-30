@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import { createOrGetConversation, fetchPromotedProducts, fetchPublicStores, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
+import GlobalSearchHeader from "../components/GlobalSearchHeader";
 
 export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
   const navigate = useNavigate();
@@ -181,7 +182,14 @@ export default function HomePage({ products, search, setSearch, categories, acti
           </div>
         </div>
 
-
+        {/* Buscador inyectado aquí, debajo del logo */}
+        <GlobalSearchHeader
+          search={search}
+          setSearch={setSearch}
+          categories={categories}
+          setActiveCategory={setActiveCategory}
+          products={products}
+        />
       </motion.header>
 
       <motion.main className="st-main" variants={stagger} initial="hidden" animate="show">
