@@ -5776,3 +5776,23 @@ h3 {
     grid-template-columns: 1fr;
   }
 }
+
+/* OVERRIDES PARA QUE LOS STICKY HEADERS ACTUALES NO SE SOLAPEN CON EL BUSCADOR */
+.st-header {
+  top: var(--gs-height, 0);
+}
+.pd-topbar {
+  top: var(--gs-height, 0);
+}
+.chat-topbar {
+  top: var(--gs-height, 0);
+}
+.st-topbar {
+  top: var(--gs-height, 0);
+}
+.hub-header {
+  top: var(--gs-height, 0);
+}
+.profile-header {
+  top: var(--gs-height, 0);
+}

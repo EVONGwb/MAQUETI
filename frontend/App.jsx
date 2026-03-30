@@ -17,6 +17,7 @@ import AdminLogin from "./src/pages/admin/AdminLogin";
 import AdminDashboard from "./src/pages/admin/AdminDashboard";
 import AdminManage from "./src/pages/admin/AdminManage";
 import AdminSettingsAudit from "./src/pages/admin/AdminSettingsAudit";
+import GlobalSearchHeader from "./src/components/GlobalSearchHeader";
 import { getApiUrl, parseJsonResponse } from "./src/services/api";
 import { priceLabel } from "./src/services/format";
 
@@ -338,11 +339,6 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
 
   return (
     <div className="view-container">
-      <div className="search-bar">
-        <Search size={20} color="#666" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} type="text" placeholder="Buscar en todo el catálogo..." />
-      </div>
-
       <button className="explore-post-cta" type="button" onClick={() => navigate("/add")}>
         <span className="explore-post-cta-left">
           <span className="explore-post-cta-icon">＋</span>
@@ -1614,9 +1610,19 @@ function App() {
   const activePath = location.pathname;
   const isAdmin = Boolean(user?.isAdmin);
   const hideNav = activePath === "/login" || activePath.startsWith("/admin");
+  const showGlobalSearch = true; // Mostrar en todas las rutas incluyendo login/admin
 
   return (
     <div className="app-layout">
+      {showGlobalSearch && (
+        <GlobalSearchHeader
+          search={search}
+          setSearch={setSearch}
+          categories={categories}
+          setActiveCategory={setActiveCategory}
+          products={products}
+        />
+      )}
       <div className="main-content">
         <Routes>
           <Route path="/login" element={<AdminLogin isLogged={isLogged} user={user} openAuth={openAuth} />} />

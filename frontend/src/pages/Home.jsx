@@ -171,14 +171,6 @@ export default function HomePage({ products, search, setSearch, categories, acti
 
             <p>Productos, tiendas y chat en tiempo real.</p>
 
-            <div className="st-search">
-              <span className="st-search-icon">🔎</span>
-              <input type="text" placeholder="iPhone, zapatillas, coches..." value={search} onChange={(e) => setSearch(e.target.value)} />
-              <button type="button" onClick={() => navigate("/explore")}>
-                Buscar
-              </button>
-            </div>
-
             <div className="st-hero-cta-row">
               <button className="st-primary-btn" type="button" onClick={() => (token ? navigate("/add") : onRequireAuth?.())}>
                 Publicar producto
