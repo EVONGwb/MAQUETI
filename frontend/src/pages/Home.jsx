@@ -182,7 +182,6 @@ export default function HomePage({ products, search, setSearch, categories, acti
           </div>
         </div>
 
-        {/* Buscador inyectado aquí, debajo del logo */}
         <GlobalSearchHeader
           search={search}
           setSearch={setSearch}

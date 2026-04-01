@@ -1648,13 +1648,6 @@ function App() {
   const activePath = location.pathname;
   const isAdmin = Boolean(user?.isAdmin);
   const hideNav = activePath === "/login" || activePath.startsWith("/admin");
-  
-  // El GlobalSearchHeader solo se mostrará en las rutas donde queremos que sea "global"
-  // y lo renderizaremos DESPUÉS del Header de la Home (o dentro de él) pero 
-  // para simplificar y mantener la lógica de "debajo del nombre y logo",
-  // vamos a ocultarlo en la vista global de App.jsx y lo moveremos al componente Home.jsx, 
-  // O bien, podemos mantenerlo aquí pero ocultarlo en la ruta "/" para que Home lo renderice en su sitio.
-  // Vamos a ocultarlo en Home ("/") para renderizarlo dentro del st-header de Home.jsx
   const showGlobalSearch = activePath !== "/"; 
 
   return (

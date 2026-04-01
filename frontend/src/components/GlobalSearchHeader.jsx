@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Clock, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LayoutGrid, Search, X, Clock, ArrowRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { resolveImageSrc } from "../services/api";
+import { priceLabel } from "../services/format";
 
-export default function GlobalSearchHeader({ search, setSearch, categories, setActiveCategory, products }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [localSearch, setLocalSearch] = useState(search || "");
+export default function GlobalSearchHeader({ search, setSearch, products, categories, setActiveCategory }) {
+  const [open, setOpen] = useState(false);
+  const [catsOpen, setCatsOpen] = useState(false);
+  const [query, setQuery] = useState(search || "");
   const [history, setHistory] = useState(() => {
     try {
       const saved = localStorage.getItem("mq_search_history");
@@ -14,155 +17,287 @@ export default function GlobalSearchHeader({ search, setSearch, categories, setA
       return [];
     }
   });
+
+  const wrapRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    setLocalSearch(search || "");
+    setQuery(search || "");
   }, [search]);
 
   useEffect(() => {
     try {
       localStorage.setItem("mq_search_history", JSON.stringify(history));
     } catch {
-      // ignore
+      undefined;
     }
   }, [history]);
 
-  const handleSearchSubmit = (term) => {
-    const trimmed = String(term || "").trim();
-    if (!trimmed) return;
-    
-    setHistory((prev) => {
-      const filtered = prev.filter((h) => h.toLowerCase() !== trimmed.toLowerCase());
-      return [trimmed, ...filtered].slice(0, 5);
-    });
-    
-    setSearch(trimmed);
-    setIsOpen(false);
-    navigate("/explore");
-  };
+  useEffect(() => {
+    const el0 = wrapRef.current;
+    if (!el0 || typeof ResizeObserver === "undefined") return undefined;
+    const el = el0.closest(".st-header") || el0;
+    const apply = () => {
+      try {
+        document.documentElement.style.setProperty("--gs-height", `${el.offsetHeight}px`);
+      } catch {
+        undefined;
+      }
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setCatsOpen(false);
+      }
+    };
+    if (open || catsOpen) window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, catsOpen]);
+
+  const suggestions = useMemo(() => {
+    const term = String(query || "").trim().toLowerCase();
+    if (!term || !Array.isArray(products)) return [];
+    return products
+      .filter((p) => String(p?.title || "").toLowerCase().includes(term) || String(p?.category || "").toLowerCase().includes(term))
+      .slice(0, 6);
+  }, [query, products]);
 
   const clearHistory = () => setHistory([]);
 
-  const removeHistoryItem = (e, item) => {
-    e.stopPropagation();
-    setHistory((prev) => prev.filter((h) => h !== item));
-  };
-
-  const handleCategoryClick = (cat) => {
-    setActiveCategory(cat);
-    setIsOpen(false);
+  const commitSearch = (term) => {
+    const trimmed = String(term || "").trim();
+    if (!trimmed) return;
+    setHistory((prev) => {
+      const filtered = prev.filter((h) => h.toLowerCase() !== trimmed.toLowerCase());
+      return [trimmed, ...filtered].slice(0, 6);
+    });
+    setSearch(trimmed);
+    setOpen(false);
     navigate("/explore");
   };
 
-  // Compute suggestions based on localSearch
-  const suggestions = useMemo(() => {
-    if (!localSearch.trim() || !products) return [];
-    const term = localSearch.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(term)).slice(0, 4);
-  }, [localSearch, products]);
+  const goCategory = (cat) => {
+    if (!setActiveCategory) return;
+    if (!cat) setActiveCategory("");
+    else setActiveCategory(cat);
+    setCatsOpen(false);
+    setOpen(false);
+    navigate("/explore");
+  };
+
+  const catsList = useMemo(() => {
+    if (!Array.isArray(categories)) return [];
+    return categories;
+  }, [categories]);
 
   return (
     <>
-      <div className="gs-header-wrap">
-        <div className="gs-search-bar" onClick={() => setIsOpen(true)}>
-          <Search size={18} className="gs-search-icon" />
-          <div className="gs-search-placeholder">
-            {search ? search : "Buscar productos, tiendas..."}
+      <div className="gs-header-wrap" ref={wrapRef}>
+        <form
+          className="gs-search-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            commitSearch(query);
+          }}
+        >
+          <div className="gs-search-field">
+            <Search size={18} className="gs-search-icon" />
+            <input
+              ref={inputRef}
+              className="gs-search-input"
+              type="search"
+              placeholder="Buscar en MAQUETI"
+              value={query}
+              onChange={(e) => {
+                const next = e.target.value;
+                setQuery(next);
+                setSearch(next);
+              }}
+              onFocus={() => setOpen(true)}
+            />
+            {catsList.length ? (
+              <button
+                type="button"
+                className="gs-cat-btn"
+                aria-label="Categorías"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setCatsOpen(true);
+                  setOpen(false);
+                }}
+              >
+                <LayoutGrid size={18} />
+              </button>
+            ) : null}
+            {query ? (
+              <button
+                type="button"
+                className="gs-clear-btn"
+                onClick={() => {
+                  setQuery("");
+                  setSearch("");
+                  try {
+                    inputRef.current?.focus();
+                  } catch {
+                    undefined;
+                  }
+                }}
+              >
+                <X size={16} />
+              </button>
+            ) : null}
           </div>
-        </div>
+        </form>
       </div>
 
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="gs-overlay"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="gs-overlay-top">
-              <form
-                className="gs-overlay-search"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSearchSubmit(localSearch);
-                }}
-              >
-                <Search size={18} className="gs-search-icon" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Buscar productos, tiendas..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="gs-overlay-input"
-                />
-                {localSearch && (
-                  <button type="button" className="gs-clear-btn" onClick={() => setLocalSearch("")}>
-                    <X size={16} />
-                  </button>
-                )}
-              </form>
-              <button className="gs-cancel-btn" onClick={() => setIsOpen(false)}>Cancelar</button>
-            </div>
-
-            <div className="gs-overlay-content">
-              {/* Sugerencias en tiempo real */}
-              {localSearch.trim() && suggestions.length > 0 && (
-                <div className="gs-section">
-                  <h4 className="gs-section-title">Sugerencias</h4>
-                  <ul className="gs-suggestions-list">
-                    {suggestions.map((s) => (
-                      <li key={s.id} onClick={() => { navigate(`/product/${s.id}`); setIsOpen(false); }}>
-                        <Search size={14} />
-                        <span>{s.title}</span>
+        {open ? (
+          <>
+            <motion.button
+              type="button"
+              className="gs-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              className="gs-suggest-wrap"
+              initial={{ opacity: 0, y: -8, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.99 }}
+              transition={{ duration: 0.18 }}
+            >
+              {String(query || "").trim() ? (
+                suggestions.length ? (
+                  <div className="gs-section">
+                    <div className="gs-section-head">
+                      <h4 className="gs-section-title">Sugerencias</h4>
+                      <button type="button" className="gs-text-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => commitSearch(query)}>
+                        Ver resultados
                         <ArrowRight size={14} className="gs-sug-arrow" />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Historial */}
-              {!localSearch.trim() && history.length > 0 && (
+                      </button>
+                    </div>
+                    <ul className="gs-suggestions-list">
+                      {suggestions.map((p) => (
+                        <li
+                          key={p.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setOpen(false);
+                            navigate(`/product/${p.id}`);
+                          }}
+                        >
+                          <div
+                            className="gs-sug-thumb"
+                            style={
+                              p.imageUrl
+                                ? { backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
+                                : undefined
+                            }
+                          />
+                          <div className="gs-sug-main">
+                            <div className="gs-sug-title">{p.title}</div>
+                            <div className="gs-sug-sub">{priceLabel(p.price)}</div>
+                          </div>
+                          <ArrowRight size={14} className="gs-sug-arrow" />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="gs-empty">Sin sugerencias. Pulsa Enter para buscar.</div>
+                )
+              ) : history.length ? (
                 <div className="gs-section">
                   <div className="gs-section-head">
-                    <h4 className="gs-section-title">Búsquedas recientes</h4>
-                    <button className="gs-text-btn" onClick={clearHistory}>Borrar</button>
+                    <h4 className="gs-section-title">Recientes</h4>
+                    <button type="button" className="gs-text-btn" onMouseDown={(e) => e.preventDefault()} onClick={() => clearHistory()}>
+                      Borrar
+                    </button>
                   </div>
                   <ul className="gs-history-list">
-                    {history.map((h, i) => (
-                      <li key={i} onClick={() => { setLocalSearch(h); handleSearchSubmit(h); }}>
+                    {history.map((h) => (
+                      <li
+                        key={h}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setQuery(h);
+                          setSearch(h);
+                          commitSearch(h);
+                        }}
+                      >
                         <Clock size={16} className="gs-hist-icon" />
                         <span>{h}</span>
-                        <button className="gs-hist-del" onClick={(e) => removeHistoryItem(e, h)}>
+                        <button type="button" className="gs-hist-del" onMouseDown={(e) => e.preventDefault()} onClick={(e) => {
+                          e.stopPropagation();
+                          setHistory((prev) => prev.filter((x) => x !== h));
+                        }}>
                           <X size={14} />
                         </button>
                       </li>
                     ))}
                   </ul>
                 </div>
+              ) : (
+                <div className="gs-empty">Escribe para buscar productos.</div>
               )}
+            </motion.div>
+          </>
+        ) : null}
+      </AnimatePresence>
 
-              {/* Categorías (siempre visibles o cuando no hay búsqueda) */}
-              {!localSearch.trim() && categories?.length > 0 && (
-                <div className="gs-section">
-                  <h4 className="gs-section-title">Explorar categorías</h4>
-                  <div className="gs-chips">
-                    {categories.map((c) => (
-                      <button key={c} className="gs-chip" onClick={() => handleCategoryClick(c)}>
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
+      <AnimatePresence>
+        {catsOpen ? (
+          <>
+            <motion.button
+              type="button"
+              className="gs-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={() => setCatsOpen(false)}
+            />
+            <motion.div
+              className="gs-cat-drawer"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.22, ease: [0.2, 0.9, 0.2, 1] }}
+              role="dialog"
+              aria-label="Categorías"
+            >
+              <div className="gs-cat-head">
+                <div className="gs-cat-title">Categorías</div>
+                <button type="button" className="gs-cat-close" onClick={() => setCatsOpen(false)} aria-label="Cerrar">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="gs-cat-scroll">
+                <button type="button" className="gs-cat-item" onClick={() => goCategory("")}>
+                  Ver todo
+                  <ArrowRight size={16} className="gs-cat-arrow" />
+                </button>
+                {catsList.map((c) => (
+                  <button key={c} type="button" className="gs-cat-item" onClick={() => goCategory(c)}>
+                    {c}
+                    <ArrowRight size={16} className="gs-cat-arrow" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        ) : null}
       </AnimatePresence>
     </>
   );

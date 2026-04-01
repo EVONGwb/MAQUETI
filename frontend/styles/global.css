@@ -5777,20 +5777,299 @@ h3 {
   }
 }
 
-/* OVERRIDES PARA QUE LOS STICKY HEADERS ACTUALES NO SE SOLAPEN CON EL BUSCADOR */
-/* En la home, el st-header YA contiene el buscador global, así que top: 0 está bien */
+.gs-header-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.gs-search-form {
+  width: 100%;
+}
+
+.gs-search-field {
+  position: relative;
+  width: 100%;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.gs-search-field:focus-within {
+  border-color: rgba(59, 130, 246, 0.55);
+  box-shadow: 0 10px 28px rgba(59, 130, 246, 0.12);
+}
+
+.gs-search-icon {
+  color: rgba(15, 23, 42, 0.55);
+  flex: 0 0 auto;
+}
+
+.gs-search-input {
+  flex: 1;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: rgba(15, 23, 42, 0.9);
+}
+
+.gs-search-input::placeholder {
+  color: rgba(15, 23, 42, 0.42);
+}
+
+.gs-clear-btn {
+  border: none;
+  background: rgba(148, 163, 184, 0.18);
+  color: rgba(15, 23, 42, 0.55);
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.gs-cat-btn {
+  border: none;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.55);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.gs-cat-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.gs-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.22);
+  border: none;
+  padding: 0;
+  z-index: 70;
+}
+
+.gs-cat-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(360px, 88vw);
+  background: rgba(255, 255, 255, 0.98);
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+}
+
+.gs-cat-head {
+  height: 56px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.gs-cat-title {
+  font-weight: 900;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.gs-cat-close {
+  border: none;
+  background: rgba(15, 23, 42, 0.04);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+.gs-cat-scroll {
+  padding: 12px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.gs-cat-item {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 14px;
+  padding: 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.86);
+  cursor: pointer;
+}
+
+.gs-cat-item:hover {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.gs-cat-arrow {
+  margin-left: auto;
+  color: rgba(15, 23, 42, 0.35);
+}
+
+.gs-suggest-wrap {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  top: calc(var(--gs-height, 70px) + 8px);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.18);
+  z-index: 80;
+  overflow: hidden;
+}
+
+.gs-section {
+  padding: 14px 14px 10px 14px;
+}
+
+.gs-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.gs-section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.82);
+}
+
+.gs-text-btn {
+  border: none;
+  background: transparent;
+  color: rgba(59, 130, 246, 0.9);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gs-suggestions-list,
+.gs-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+}
+
+.gs-suggestions-list li,
+.gs-history-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.gs-suggestions-list li:hover,
+.gs-history-list li:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.gs-sug-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  flex: 0 0 auto;
+}
+
+.gs-sug-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.gs-sug-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: rgba(15, 23, 42, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gs-sug-sub {
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+.gs-sug-arrow {
+  margin-left: auto;
+  color: rgba(15, 23, 42, 0.35);
+}
+
+.gs-hist-icon {
+  color: rgba(15, 23, 42, 0.38);
+}
+
+.gs-hist-del {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.38);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.gs-empty {
+  padding: 16px;
+  color: rgba(15, 23, 42, 0.6);
+  font-weight: 700;
+}
+
 .st-header {
   top: 0;
   display: flex;
   flex-direction: column;
-  padding: 0; /* Quitamos el padding lateral general para manejarlo dentro */
+  padding: 0;
 }
 .st-brand {
   padding: 16px 24px 10px 24px;
 }
 .st-header .gs-header-wrap {
-  /* Hacemos que el buscador dentro del header no tenga position sticky, 
-     ya que el st-header entero ya es sticky */
   position: relative;
   top: auto;
   border-bottom: none;
