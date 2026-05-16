@@ -24,8 +24,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 ); 
 
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+if (typeof window !== "undefined" && "serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+  });
+}
+
+if (typeof window !== "undefined" && "serviceWorker" in navigator && import.meta.env.DEV) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.getRegistrations?.().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    }).catch(() => undefined);
+
+    window.caches?.keys?.().then((keys) => {
+      keys.filter((key) => key.startsWith("maqueti-pwa")).forEach((key) => window.caches.delete(key));
+    }).catch(() => undefined);
   });
 }

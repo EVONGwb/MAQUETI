@@ -96,15 +96,13 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
 
   return (
     <div className="pd-page">
-      <header className="pd-topbar">
-        <button className="pd-back-btn" onClick={() => navigate(-1)} type="button">
-          ← Volver
-        </button>
-        <h1>Detalle del producto</h1>
-        <div className="pd-spacer" />
-      </header>
-
       <main className="pd-main">
+        <div className="pd-inline-nav">
+          <button className="pd-back-btn" onClick={() => navigate(-1)} type="button">
+            ← Volver
+          </button>
+        </div>
+
         {loading ? (
           <div className="pd-state-card">
             <h3>Cargando producto...</h3>

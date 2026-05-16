@@ -70,7 +70,21 @@ const upsertMyStore = async (req, res) => {
     const ownerId = req.user?.id;
     if (!ownerId) return res.status(401).json({ message: "Token requerido" });
 
-    const { name, description, welcomeMessage, logoUrl, bannerUrl, themePrimary, themeAccent, themeBackground } = req.body || {};
+    const {
+      name,
+      tagline,
+      description,
+      welcomeMessage,
+      announcement,
+      logoUrl,
+      bannerUrl,
+      themePrimary,
+      themeAccent,
+      themeBackground,
+      layoutStyle,
+      instagramUrl,
+      whatsappUrl,
+    } = req.body || {};
     if (!name || !String(name).trim()) return res.status(400).json({ message: "Nombre de tienda requerido" });
 
     const now = Date.now();
@@ -84,13 +98,18 @@ const upsertMyStore = async (req, res) => {
         ownerId: Number(ownerId),
         slug,
         name: String(name).trim(),
+        tagline: String(tagline || ""),
         description: String(description || ""),
         welcomeMessage: String(welcomeMessage || ""),
+        announcement: String(announcement || ""),
         logoUrl: String(logoUrl || ""),
         bannerUrl: String(bannerUrl || ""),
         themePrimary: String(themePrimary || "#2563eb"),
         themeAccent: String(themeAccent || "#0f172a"),
         themeBackground: String(themeBackground || "#ffffff"),
+        layoutStyle: String(layoutStyle || "boutique"),
+        instagramUrl: String(instagramUrl || ""),
+        whatsappUrl: String(whatsappUrl || ""),
         createdAt: now,
         updatedAt: now,
       });
@@ -104,13 +123,18 @@ const upsertMyStore = async (req, res) => {
         $set: {
           slug,
           name: String(name).trim(),
+          tagline: String(tagline || ""),
           description: String(description || ""),
           welcomeMessage: String(welcomeMessage || ""),
+          announcement: String(announcement || ""),
           logoUrl: String(logoUrl || ""),
           bannerUrl: String(bannerUrl || ""),
           themePrimary: String(themePrimary || "#2563eb"),
           themeAccent: String(themeAccent || "#0f172a"),
           themeBackground: String(themeBackground || "#ffffff"),
+          layoutStyle: String(layoutStyle || "boutique"),
+          instagramUrl: String(instagramUrl || ""),
+          whatsappUrl: String(whatsappUrl || ""),
           updatedAt: now,
         },
       }
@@ -171,9 +195,15 @@ const listPublicStores = async (req, res) => {
       description: 1,
       logoUrl: 1,
       bannerUrl: 1,
+      tagline: 1,
+      welcomeMessage: 1,
+      announcement: 1,
       themePrimary: 1,
       themeAccent: 1,
       themeBackground: 1,
+      layoutStyle: 1,
+      instagramUrl: 1,
+      whatsappUrl: 1,
       updatedAt: 1,
       createdAt: 1,
     };

@@ -195,13 +195,20 @@ export function ChatDetailPage({ token, user }) {
 
       <main className="chat-main">
         <div className="chat-product-banner">
-          <div className="chat-product-mini">
+          <button
+            className="chat-product-mini"
+            type="button"
+            onClick={() => {
+              if (convData.productId) navigate(`/product/${convData.productId}`);
+            }}
+          >
             <img className="chat-product-thumb" src={productImg} alt={convData.productTitle} />
             <div>
               <strong>{convData.productTitle}</strong>
               <p>Precio: {priceLabel(convData.productPrice)}</p>
             </div>
-          </div>
+            {convData.productId ? <span className="chat-product-open">Ver</span> : null}
+          </button>
         </div>
 
         <div className="chat-messages">

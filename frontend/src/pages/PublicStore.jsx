@@ -37,9 +37,20 @@ export default function PublicStorePage() {
   const themeStyle = useMemo(() => {
     if (!store) return {};
     return {
+      "--shop-primary": store.themePrimary || "#2563eb",
+      "--shop-accent": store.themeAccent || "#0f172a",
+      "--shop-bg": store.themeBackground || "#ffffff",
       background: store.themeBackground || "#ffffff",
     };
   }, [store]);
+
+  const visibleProducts = useMemo(() => Array.isArray(products) ? products : [], [products]);
+  const featuredProducts = useMemo(() => visibleProducts.slice(0, 3), [visibleProducts]);
+  const categories = useMemo(() => {
+    const set = new Set();
+    visibleProducts.forEach((p) => set.add(p.category || "Otros"));
+    return [...set].slice(0, 8);
+  }, [visibleProducts]);
 
   if (loading) {
     return (
@@ -69,46 +80,107 @@ export default function PublicStorePage() {
   }
 
   return (
-    <div className="view-container" style={themeStyle}>
-      <div className="store-header" style={{ margin: 0, borderRadius: 24, overflow: "hidden" }}>
+    <div className={`shop-page shop-${store.layoutStyle || "boutique"}`} style={themeStyle}>
+      <section className="shop-hero">
         <div
-          className="store-banner placeholder-img"
-          style={store.bannerUrl ? { backgroundImage: `url(${resolveImageSrc(store.bannerUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
-        />
-        <div className="store-profile">
-          <div
-            className="store-avatar"
-            style={store.logoUrl ? { backgroundImage: `url(${resolveImageSrc(store.logoUrl)})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
-          />
-          <div>
-            <h2 style={{ color: store.themeAccent || "#0f172a" }}>{store.name}</h2>
-            <p>{store.description || ""}</p>
-          </div>
+          className="shop-cover"
+          style={store.bannerUrl ? { backgroundImage: `url(${resolveImageSrc(store.bannerUrl)})` } : {}}
+        >
+          <div className="shop-cover-shade" />
+          {store.announcement ? <div className="shop-announcement">{store.announcement}</div> : null}
         </div>
-      </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 14 }}>
-        <button className="secondary-btn" type="button" onClick={() => navigate("/")}>
-          Volver
-        </button>
-        <button className="primary-btn" type="button" onClick={() => navigate("/explore")}>
-          Explorar
-        </button>
-      </div>
-
-      <h3 style={{ marginTop: 18 }}>Productos</h3>
-      {products.length === 0 ? <div className="empty-state">Aún no hay productos publicados.</div> : null}
-      <div className="product-grid">
-        {products.map((p) => (
-          <div key={p.id} className="feed-item" style={{ cursor: "pointer" }} onClick={() => navigate(`/product/${p.id}`)}>
-            <div className="feed-img placeholder-img" style={{ backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-            <div className="feed-details">
-              <h4>{p.title}</h4>
-              <p className="price-large">{priceLabel(p.price)}</p>
+        <div className="shop-profile-card">
+          <div
+            className="shop-logo"
+            style={store.logoUrl ? { backgroundImage: `url(${resolveImageSrc(store.logoUrl)})` } : {}}
+          >
+            {!store.logoUrl ? String(store.name || "T").slice(0, 2).toUpperCase() : null}
+          </div>
+          <div className="shop-profile-main">
+            <p className="shop-kicker">Tienda Pro en MAQUETI</p>
+            <h1>{store.name}</h1>
+            {store.tagline ? <p className="shop-tagline">{store.tagline}</p> : null}
+            <p className="shop-description">{store.description || "Una tienda independiente con productos seleccionados para ti."}</p>
+            <div className="shop-actions">
+              <button type="button" onClick={() => navigate("/")}>Volver a MAQUETI</button>
+              <button type="button" className="primary" onClick={() => navigate("/explore")}>Explorar marketplace</button>
+              {store.instagramUrl ? <a href={store.instagramUrl} target="_blank" rel="noreferrer">Instagram</a> : null}
+              {store.whatsappUrl ? <a href={store.whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a> : null}
             </div>
           </div>
-        ))}
-      </div>
+          <div className="shop-stats-panel">
+            <div><strong>{visibleProducts.length}</strong><span>productos</span></div>
+            <div><strong>{categories.length}</strong><span>categorías</span></div>
+            <div><strong>Pro</strong><span>escaparate</span></div>
+          </div>
+        </div>
+      </section>
+
+      {store.welcomeMessage ? (
+        <section className="shop-message">
+          <span>Mensaje de la tienda</span>
+          <p>{store.welcomeMessage}</p>
+        </section>
+      ) : null}
+
+      {featuredProducts.length ? (
+        <section className="shop-section">
+          <div className="shop-section-head">
+            <div>
+              <p>Selección del escaparate</p>
+              <h2>Productos destacados</h2>
+            </div>
+          </div>
+          <div className="shop-featured-grid">
+            {featuredProducts.map((p) => (
+              <article key={p.id} className="shop-featured-card" onClick={() => navigate(`/product/${p.id}`)}>
+                <img src={resolveImageSrc(p.imageUrl)} alt={p.title} />
+                <div>
+                  <span>{p.category || "Producto"}</span>
+                  <h3>{p.title}</h3>
+                  <strong>{priceLabel(p.price)}</strong>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {categories.length ? (
+        <section className="shop-categories" aria-label="Categorías de la tienda">
+          {categories.map((category) => <span key={category}>{category}</span>)}
+        </section>
+      ) : null}
+
+      <section className="shop-section">
+        <div className="shop-section-head">
+          <div>
+            <p>Catálogo completo</p>
+            <h2>Todo el stock disponible</h2>
+          </div>
+          <button type="button" onClick={() => navigate("/explore")}>Ver más tiendas</button>
+        </div>
+
+        {visibleProducts.length === 0 ? <div className="shop-empty">Aún no hay productos publicados.</div> : null}
+        <div className="shop-product-grid">
+          {visibleProducts.map((p) => (
+            <article key={p.id} className="shop-product-card" onClick={() => navigate(`/product/${p.id}`)}>
+              <div className="shop-product-img" style={{ backgroundImage: `url(${resolveImageSrc(p.imageUrl)})` }}>
+                <span>{p.condition || "Disponible"}</span>
+              </div>
+              <div className="shop-product-body">
+                <p>{p.category || "Producto"}</p>
+                <h3>{p.title}</h3>
+                <div>
+                  <strong>{priceLabel(p.price)}</strong>
+                  <small>{p.stock === null || p.stock === undefined ? "Stock activo" : `${p.stock} en stock`}</small>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

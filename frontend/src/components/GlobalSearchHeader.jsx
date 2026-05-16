@@ -98,6 +98,9 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
     return categories;
   }, [categories]);
 
+  const hasQuery = Boolean(String(query || "").trim());
+  const showSuggestions = open && (hasQuery || history.length > 0);
+
   return (
     <>
       <div className="gs-header-wrap" ref={wrapRef}>
@@ -159,7 +162,7 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
       </div>
 
       <AnimatePresence>
-        {open ? (
+        {showSuggestions ? (
           <>
             <motion.button
               type="button"
@@ -177,7 +180,7 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
               exit={{ opacity: 0, y: -8, scale: 0.99 }}
               transition={{ duration: 0.18 }}
             >
-              {String(query || "").trim() ? (
+              {hasQuery ? (
                 suggestions.length ? (
                   <div className="gs-section">
                     <div className="gs-section-head">
@@ -217,7 +220,7 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
                 ) : (
                   <div className="gs-empty">Sin sugerencias. Pulsa Enter para buscar.</div>
                 )
-              ) : history.length ? (
+              ) : (
                 <div className="gs-section">
                   <div className="gs-section-head">
                     <h4 className="gs-section-title">Recientes</h4>
@@ -248,8 +251,6 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
                     ))}
                   </ul>
                 </div>
-              ) : (
-                <div className="gs-empty">Escribe para buscar productos.</div>
               )}
             </motion.div>
           </>

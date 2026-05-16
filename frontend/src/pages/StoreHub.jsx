@@ -25,13 +25,18 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
 
   const [form, setForm] = useState({
     name: "",
+    tagline: "",
     description: "",
     welcomeMessage: "",
+    announcement: "",
     logoUrl: "",
     bannerUrl: "",
     themePrimary: "#2563eb",
     themeAccent: "#0f172a",
     themeBackground: "#ffffff",
+    layoutStyle: "boutique",
+    instagramUrl: "",
+    whatsappUrl: "",
   });
 
   const [logoFile, setLogoFile] = useState(null);
@@ -58,13 +63,18 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
           setForm((prev) => ({
             ...prev,
             name: data.store.name || "",
+            tagline: data.store.tagline || "",
             description: data.store.description || "",
             welcomeMessage: data.store.welcomeMessage || "",
+            announcement: data.store.announcement || "",
             logoUrl: data.store.logoUrl || "",
             bannerUrl: data.store.bannerUrl || "",
             themePrimary: data.store.themePrimary || "#2563eb",
             themeAccent: data.store.themeAccent || "#0f172a",
             themeBackground: data.store.themeBackground || "#ffffff",
+            layoutStyle: data.store.layoutStyle || "boutique",
+            instagramUrl: data.store.instagramUrl || "",
+            whatsappUrl: data.store.whatsappUrl || "",
           }));
         }
       } catch (e) {
@@ -208,9 +218,9 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
     const okName = Boolean(String(form.name || "").trim());
     const okImages = Boolean((logoFile || form.logoUrl) && (bannerFile || form.bannerUrl));
     const okDesc = Boolean(String(form.description || "").trim());
-    const okColors = Boolean(String(form.themePrimary || "").trim() && String(form.themeAccent || "").trim());
-    const score = [okName, okImages, okDesc, okColors].filter(Boolean).length;
-    return { okName, okImages, okDesc, okColors, score };
+    const okBrand = Boolean(String(form.tagline || form.welcomeMessage || "").trim());
+    const score = [okName, okImages, okDesc, okBrand].filter(Boolean).length;
+    return { okName, okImages, okDesc, okBrand, score };
   }, [form, logoFile, bannerFile]);
 
   const StoreDesigner = ({ mode }) => {
@@ -254,8 +264,10 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
                 <div className="store-preview-title" style={{ color: normalizeHex(form.themeAccent, "#0f172a") }}>
                   {String(form.name || "").trim() || "Mi Tienda"}
                 </div>
+                <div className="store-preview-tagline">{String(form.tagline || "").trim() || "Tu escaparate digital"}</div>
                 <div className="store-preview-text">{String(form.welcomeMessage || "").trim() || "Bienvenidos a mi tienda online."}</div>
                 <div className="store-preview-sub">{String(form.description || "").trim() || "Aquí encontrarás productos al mejor precio."}</div>
+                {String(form.announcement || "").trim() ? <div className="store-preview-note">{form.announcement}</div> : null}
               </div>
             </div>
             <div className="store-preview-hint">Vista previa en tiempo real</div>
@@ -272,8 +284,16 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
                 <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Ej: Evongo Store" />
               </div>
               <div className="store-field">
+                <label>Lema de marca</label>
+                <input value={form.tagline} onChange={(e) => setForm((p) => ({ ...p, tagline: e.target.value }))} placeholder="Ej: Tecnología urbana, precios reales" />
+              </div>
+              <div className="store-field">
                 <label>Mensaje de bienvenida (opcional)</label>
                 <input value={form.welcomeMessage} onChange={(e) => setForm((p) => ({ ...p, welcomeMessage: e.target.value }))} placeholder="Ej: Envíos rápidos y atención premium" />
+              </div>
+              <div className="store-field">
+                <label>Aviso destacado (opcional)</label>
+                <input value={form.announcement} onChange={(e) => setForm((p) => ({ ...p, announcement: e.target.value }))} placeholder="Ej: Oferta semanal: 2x1 en accesorios" />
               </div>
             </div>
 
@@ -362,6 +382,22 @@ export default function StoreHub({ token, user, myProducts, refreshData, onRequi
               <div className="store-field">
                 <label>Descripción</label>
                 <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Ej: Tecnología, moda y ofertas exclusivas cada semana." />
+              </div>
+              <div className="store-field">
+                <label>Estilo del escaparate</label>
+                <select value={form.layoutStyle} onChange={(e) => setForm((p) => ({ ...p, layoutStyle: e.target.value }))}>
+                  <option value="boutique">Boutique premium</option>
+                  <option value="street">Urbano visual</option>
+                  <option value="minimal">Minimal limpio</option>
+                </select>
+              </div>
+              <div className="store-field">
+                <label>Instagram o red social (opcional)</label>
+                <input value={form.instagramUrl} onChange={(e) => setForm((p) => ({ ...p, instagramUrl: e.target.value }))} placeholder="https://instagram.com/tu_tienda" />
+              </div>
+              <div className="store-field">
+                <label>WhatsApp o contacto directo (opcional)</label>
+                <input value={form.whatsappUrl} onChange={(e) => setForm((p) => ({ ...p, whatsappUrl: e.target.value }))} placeholder="https://wa.me/..." />
               </div>
             </div>
 
