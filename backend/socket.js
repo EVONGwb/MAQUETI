@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const Conversation = require("./models/conversation.model");
 const Message = require("./models/message.model");
+const { getAllowedOrigins } = require("./config/cors");
 
 let io;
 
@@ -10,7 +11,7 @@ const initSocket = (httpServer) => {
   const secret = process.env.JWT_SECRET || (nodeEnv === "production" ? "" : "maqueti_secret");
 
   io = new Server(httpServer, {
-    cors: { origin: true, credentials: true },
+    cors: { origin: getAllowedOrigins(), credentials: true },
   });
 
   io.use((socket, next) => {

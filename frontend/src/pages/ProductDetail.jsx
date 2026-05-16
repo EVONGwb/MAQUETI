@@ -51,6 +51,13 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
     if (product.imageUrl) return [product.imageUrl];
     return [];
   }, [product]);
+  const sellerInitials = useMemo(() => {
+    const name = String(product?.sellerName || "Vendedor").trim();
+    const parts = name.split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "V";
+    const b = parts[1]?.[0] || parts[0]?.[1] || "D";
+    return `${a}${b}`.toUpperCase();
+  }, [product?.sellerName]);
 
   useEffect(() => {
     setActiveImage(0);
@@ -110,6 +117,7 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
         ) : product ? (
           <div className="pd-grid">
             <section className="pd-gallery-card">
+              <div className="pd-gallery-badge">Publicado en MAQUETI</div>
               <img src={resolveImageSrc(images[activeImage] || product.imageUrl)} alt={product.title} className="pd-main-image" />
               {images.length > 1 ? (
                 <div className="pd-thumbs" role="list">
@@ -137,21 +145,37 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
               <div className="pd-meta">
                 <span>📍 {product.location || "Sin ubicación"}</span>
                 <span>🏷 {product.condition || "Disponible"}</span>
+                <span>⚡ Chat directo</span>
               </div>
 
               <p className="pd-description">{product.description || "Sin descripción"}</p>
 
+              <div className="pd-trust-row">
+                <div>
+                  <strong>Compra con calma</strong>
+                  <span>Habla, negocia y revisa el producto antes de cerrar el trato.</span>
+                </div>
+                <div>
+                  <strong>Oferta rápida</strong>
+                  <span>Pregunta disponibilidad y acuerda entrega desde el chat.</span>
+                </div>
+              </div>
+
               <div className="pd-seller-box">
-                <h4>Vendedor</h4>
-                <p>{product.sellerName || "Vendedor"}</p>
+                <div className="pd-seller-avatar">{sellerInitials}</div>
+                <div>
+                  <h4>{product.sellerName || "Vendedor"}</h4>
+                  <p>Vendedor activo en MAQUETI</p>
+                </div>
+                <button type="button" onClick={handleContactSeller}>Contactar</button>
               </div>
 
               <div className="pd-actions">
                 <button className="pd-chat-btn" onClick={handleContactSeller} type="button">
                   💬 Hablar con el vendedor
                 </button>
-                <button className="pd-buy-btn" type="button" disabled>
-                  Comprar ahora
+                <button className="pd-buy-btn" type="button" onClick={handleContactSeller}>
+                  Hacer oferta
                 </button>
               </div>
 

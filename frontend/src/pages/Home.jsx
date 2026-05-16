@@ -81,6 +81,18 @@ export default function HomePage({ products, search, setSearch, categories, acti
 
   const productSkeletons = useMemo(() => Array.from({ length: 6 }).map((_, i) => ({ id: `sk-${i}` })), []);
   const storeSkeletons = useMemo(() => Array.from({ length: 3 }).map((_, i) => ({ id: `sk-store-${i}` })), []);
+  const heroPreviewProducts = useMemo(() => {
+    const source = filteredProducts.length ? filteredProducts : products;
+    return source.slice(0, 3);
+  }, [filteredProducts, products]);
+  const marketplaceStats = useMemo(
+    () => [
+      { value: products.length || "0", label: "productos activos" },
+      { value: categories.length || "0", label: "categorías vivas" },
+      { value: recommendedStores.length || "0", label: "tiendas visibles" },
+    ],
+    [categories.length, products.length, recommendedStores.length]
+  );
 
   const badgeLabel = (product) => (product?.featured || product?.isFeatured ? "Destacado" : "Nuevo");
 
@@ -168,9 +180,6 @@ export default function HomePage({ products, search, setSearch, categories, acti
 
   return (
     <div className="st-home">
-      <div className="st-bg-orb st-bg-orb-1" />
-      <div className="st-bg-orb st-bg-orb-2" />
-
       <motion.header className="st-header" variants={reveal} initial="hidden" animate="show">
         <div className="st-brand">
           <div className="st-logo-box">
@@ -194,13 +203,13 @@ export default function HomePage({ products, search, setSearch, categories, acti
       <motion.main className="st-main" variants={stagger} initial="hidden" animate="show">
         <motion.section className="st-hero" variants={reveal}>
           <motion.div className="st-hero-content" variants={revealFast}>
-            <span className="st-pill">Compra, vende y crea tu tienda</span>
+            <span className="st-pill">Marketplace social de nueva generación</span>
 
             <h2>
-              Compra y vende <span>como un pro</span>
+              Compra, vende y negocia <span>sin perder el ritmo</span>
             </h2>
 
-            <p>Productos, tiendas y chat en tiempo real.</p>
+            <p>Descubre productos cerca de ti, habla con vendedores, guarda favoritos y crea tu tienda con una experiencia rápida, visual y preparada para crecer.</p>
 
             <div className="st-hero-cta-row">
               <button className="st-primary-btn" type="button" onClick={() => (token ? navigate("/add") : onRequireAuth?.())}>
@@ -213,21 +222,58 @@ export default function HomePage({ products, search, setSearch, categories, acti
                 Abrir mi tienda
               </button>
             </div>
+
+            <div className="st-hero-stats" aria-label="Resumen de MAQUETI">
+              {marketplaceStats.map((stat) => (
+                <div className="st-hero-stat" key={stat.label}>
+                  <strong>{stat.value}</strong>
+                  <span>{stat.label}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
           <motion.div className="st-hero-side" variants={stagger}>
-            <motion.div className="st-feature-card st-feature-dark" variants={revealFast} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.99 }}>
-              <h3>🔥 Tendencias hoy</h3>
-              <p>Lo más vendido ahora mismo.</p>
-              <button type="button" onClick={() => scrollToId("st-trending")}>
-                Ver productos
-              </button>
-            </motion.div>
+            <motion.div className="st-market-panel" variants={revealFast}>
+              <div className="st-market-panel-head">
+                <span>Ahora en MAQUETI</span>
+                <button type="button" onClick={() => scrollToId("st-trending")}>Ver tendencias</button>
+              </div>
 
-            <motion.div className="st-feature-card" variants={revealFast} whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }}>
-              <span className="st-feature-tag blue">NUEVO</span>
-              <h3>Tiendas con stock</h3>
-              <p>Controla catálogo, inventario y publicaciones desde una sola app.</p>
+              <div className="st-live-stack">
+                {loading
+                  ? productSkeletons.slice(0, 3).map((s) => (
+                      <div className="st-live-card st-skeleton-card" key={s.id}>
+                        <div className="st-skeleton st-live-thumb" />
+                        <div className="st-live-info">
+                          <div className="st-skeleton st-skeleton-line st-w-70" />
+                          <div className="st-skeleton st-skeleton-line st-w-40" />
+                        </div>
+                      </div>
+                    ))
+                  : heroPreviewProducts.map((product) => (
+                      <button className="st-live-card" type="button" key={product.id} onClick={() => navigate(`/product/${product.id}`)}>
+                        <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
+                        <span className="st-live-glow" />
+                        <div className="st-live-info">
+                          <p>{product.category || "Producto"}</p>
+                          <strong>{product.title}</strong>
+                          <small>{priceLabel(product.price)} · {product.location || "Sin ubicación"}</small>
+                        </div>
+                      </button>
+                    ))}
+              </div>
+
+              <div className="st-market-strip">
+                <div>
+                  <strong>Chat directo</strong>
+                  <span>Negocia sin salir de la app</span>
+                </div>
+                <div>
+                  <strong>Tiendas</strong>
+                  <span>Escaparates para vendedores</span>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         </motion.section>
