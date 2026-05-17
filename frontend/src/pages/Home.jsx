@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import { createOrGetConversation, fetchPromotedProducts, fetchPublicStores, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
@@ -8,6 +8,7 @@ import GlobalSearchHeader from "../components/GlobalSearchHeader";
 
 export default function HomePage({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, favorites, toggleFavorite, token, onRequireAuth }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [chatError, setChatError] = useState("");
   const [storesLoading, setStoresLoading] = useState(true);
   const [recommendedStores, setRecommendedStores] = useState([]);
@@ -99,6 +100,12 @@ export default function HomePage({ products, search, setSearch, categories, acti
   const scrollToId = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const openProduct = (productId) => {
+    navigate(`/product/${productId}`, {
+      state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } },
+    });
   };
 
   const handleStartChat = async (productId) => {
@@ -252,7 +259,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
                       </div>
                     ))
                   : heroPreviewProducts.map((product) => (
-                      <button className="st-live-card" type="button" key={product.id} onClick={() => navigate(`/product/${product.id}`)}>
+                      <button className="st-live-card" type="button" key={product.id} onClick={() => openProduct(product.id)}>
                         <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
                         <span className="st-live-glow" />
                         <div className="st-live-info">
@@ -394,7 +401,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
                   className="st-product-card st-product-card-compact"
                   variants={revealFast}
                   whileTap={{ scale: 0.99 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => openProduct(product.id)}
                 >
                   <div className="st-product-image-wrap">
                     <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
@@ -446,7 +453,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
                   className="st-product-card st-product-card-compact"
                   variants={revealFast}
                   whileTap={{ scale: 0.99 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => openProduct(product.id)}
                 >
                   <div className="st-product-image-wrap">
                     <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
@@ -516,7 +523,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
                   className="st-product-card st-product-card-compact"
                   variants={revealFast}
                   whileTap={{ scale: 0.99 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => openProduct(product.id)}
                 >
                   <div className="st-product-image-wrap">
                     <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
@@ -588,7 +595,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
                   className="st-product-card"
                   variants={revealFast}
                   whileTap={{ scale: 0.995 }}
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => openProduct(product.id)}
                   layout
                 >
                   <div className="st-product-image-wrap">

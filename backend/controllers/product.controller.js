@@ -17,6 +17,24 @@ const isStoreActive = async (userId) => {
   return user?.storeSubscriptionStatus === "active";
 };
 
+const attachSellerInfo = async (products) => {
+  const list = Array.isArray(products) ? products : [products].filter(Boolean);
+  const userIds = Array.from(new Set(list.map((product) => Number(product.userId)).filter(Number.isFinite)));
+  if (!userIds.length) return list;
+
+  const users = await User.find({ id: { $in: userIds } }, { id: 1, name: 1, avatarUrl: 1, _id: 0 }).lean();
+  const usersById = new Map(users.map((user) => [String(user.id), user]));
+
+  return list.map((product) => {
+    const seller = usersById.get(String(product.userId));
+    return {
+      ...product,
+      sellerName: seller?.name || null,
+      sellerAvatarUrl: seller?.avatarUrl || null,
+    };
+  });
+};
+
 const getProducts = async (req, res) => {
   try {
     const { userId } = req.query;
@@ -35,7 +53,8 @@ const getProducts = async (req, res) => {
       ? { userId: Number(userId) }
       : { $or: [{ status: "published" }, { status: { $exists: false } }] };
     const products = await Product.find(query, { _id: 0 }).sort({ createdAt: -1 }).lean();
-    return res.json({ total: products.length, products });
+    const productsWithSeller = await attachSellerInfo(products);
+    return res.json({ total: productsWithSeller.length, products: productsWithSeller });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener productos" });
   }
@@ -56,7 +75,8 @@ const getProductById = async (req, res) => {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
 
-    return res.json({ product });
+    const [productWithSeller] = await attachSellerInfo(product);
+    return res.json({ product: productWithSeller });
   } catch (error) {
     return res.status(500).json({ message: "Error al obtener producto" });
   }

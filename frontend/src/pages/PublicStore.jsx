@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchPublicStore, resolveImageSrc } from "../services/api";
 import { priceLabel } from "../services/format";
 
 export default function PublicStorePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState(null);
   const [products, setProducts] = useState([]);
@@ -45,12 +46,23 @@ export default function PublicStorePage() {
   }, [store]);
 
   const visibleProducts = useMemo(() => Array.isArray(products) ? products : [], [products]);
-  const featuredProducts = useMemo(() => visibleProducts.slice(0, 3), [visibleProducts]);
+  const featuredProducts = useMemo(() => visibleProducts.slice(0, 8), [visibleProducts]);
+  const adBannerProducts = useMemo(() => {
+    if (!featuredProducts.length) return [];
+    const targetCount = Math.max(6, featuredProducts.length * 2);
+    return Array.from({ length: targetCount }, (_, index) => featuredProducts[index % featuredProducts.length]);
+  }, [featuredProducts]);
   const categories = useMemo(() => {
     const set = new Set();
     visibleProducts.forEach((p) => set.add(p.category || "Otros"));
     return [...set].slice(0, 8);
   }, [visibleProducts]);
+
+  const openProduct = (productId) => {
+    navigate(`/product/${productId}`, {
+      state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } },
+    });
+  };
 
   if (loading) {
     return (
@@ -125,24 +137,26 @@ export default function PublicStorePage() {
       ) : null}
 
       {featuredProducts.length ? (
-        <section className="shop-section">
+        <section className="shop-section shop-ad-section">
           <div className="shop-section-head">
             <div>
-              <p>Selección del escaparate</p>
-              <h2>Productos destacados</h2>
+              <p>Escaparate publicitario</p>
+              <h2>Destacados de la tienda</h2>
             </div>
           </div>
-          <div className="shop-featured-grid">
-            {featuredProducts.map((p) => (
-              <article key={p.id} className="shop-featured-card" onClick={() => navigate(`/product/${p.id}`)}>
-                <img src={resolveImageSrc(p.imageUrl)} alt={p.title} />
-                <div>
-                  <span>{p.category || "Producto"}</span>
-                  <h3>{p.title}</h3>
-                  <strong>{priceLabel(p.price)}</strong>
-                </div>
-              </article>
-            ))}
+          <div className="shop-featured-grid shop-ad-marquee" aria-label="Productos destacados">
+            <div className="shop-ad-track">
+              {[...adBannerProducts, ...adBannerProducts].map((p, index) => (
+                <article key={`${p.id}-${index}`} className="shop-featured-card shop-ad-card" onClick={() => openProduct(p.id)}>
+                  <img src={resolveImageSrc(p.imageUrl)} alt={p.title} />
+                  <div className="shop-ad-copy">
+                    <span>{p.category || "Producto destacado"}</span>
+                    <h3>{p.title}</h3>
+                    <strong>{priceLabel(p.price)}</strong>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       ) : null}
@@ -165,7 +179,7 @@ export default function PublicStorePage() {
         {visibleProducts.length === 0 ? <div className="shop-empty">Aún no hay productos publicados.</div> : null}
         <div className="shop-product-grid">
           {visibleProducts.map((p) => (
-            <article key={p.id} className="shop-product-card" onClick={() => navigate(`/product/${p.id}`)}>
+            <article key={p.id} className="shop-product-card" onClick={() => openProduct(p.id)}>
               <div className="shop-product-img" style={{ backgroundImage: `url(${resolveImageSrc(p.imageUrl)})` }}>
                 <span>{p.condition || "Disponible"}</span>
               </div>

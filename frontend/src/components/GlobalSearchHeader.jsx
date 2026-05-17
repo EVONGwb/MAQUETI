@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutGrid, Search, X, Clock, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { resolveImageSrc } from "../services/api";
@@ -21,6 +21,7 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setQuery(search || "");
@@ -197,7 +198,9 @@ export default function GlobalSearchHeader({ search, setSearch, products, catego
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
                             setOpen(false);
-                            navigate(`/product/${p.id}`);
+                            navigate(`/product/${p.id}`, {
+                              state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } },
+                            });
                           }}
                         >
                           <div

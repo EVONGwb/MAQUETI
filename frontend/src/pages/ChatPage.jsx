@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Image as ImageIcon, Send, X } from "lucide-react";
 import { io } from "socket.io-client";
 import { getApiUrl, getConversationById, getConversationMessages, getUserConversations, markConversationAsRead, resolveImageSrc, sendConversationMessage } from "../services/api";
@@ -10,6 +10,7 @@ export function ChatListPage({ token, user }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -45,7 +46,12 @@ export function ChatListPage({ token, user }) {
             const img = conv.productImageUrl ? resolveImageSrc(conv.productImageUrl) : "";
 
             return (
-              <div key={conv.id} className="chat-row" onClick={() => navigate(`/chats/${conv.id}`)} style={{ cursor: "pointer" }}>
+                <div
+                  key={conv.id}
+                  className="chat-row"
+                  onClick={() => navigate(`/chats/${conv.id}`, { state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } } })}
+                  style={{ cursor: "pointer" }}
+                >
                 <div
                   className="chat-row-thumb placeholder-img"
                   style={img ? { backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
@@ -67,6 +73,7 @@ export function ChatListPage({ token, user }) {
 export function ChatDetailPage({ token, user }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [convData, setConvData] = useState(null);
   const [text, setText] = useState("");
@@ -177,29 +184,42 @@ export function ChatDetailPage({ token, user }) {
   const isBuyer = String(convData.buyerId) === String(user?.id);
   const otherName = isBuyer ? convData.sellerName : convData.buyerName;
   const productImg = resolveImageSrc(convData.productImageUrl);
+  const handleBack = () => {
+    const from = location.state?.from;
+    const pathname = typeof from === "string" ? from : from?.pathname;
+    const search = typeof from === "object" && from?.search ? from.search : "";
+    const hash = typeof from === "object" && from?.hash ? from.hash : "";
+    const isSafeAppPath = typeof pathname === "string" && pathname.startsWith("/") && pathname !== location.pathname && !pathname.startsWith("/chats/");
+
+    navigate(isSafeAppPath ? `${pathname}${search}${hash}` : "/chats", { replace: true });
+  };
 
   return (
     <div className="chat-page">
-      <header className="chat-topbar">
-        <button className="chat-back-btn" onClick={() => navigate(-1)} type="button">
-          ←
-        </button>
-        <div className="chat-header-info">
-          <h1>{convData.productTitle}</h1>
-          <p>Chat con {otherName}</p>
-        </div>
-        <button className="chat-more-btn" type="button">
-          ⋯
-        </button>
-      </header>
-
       <main className="chat-main">
+        <div className="chat-inline-head">
+          <button className="chat-back-btn" onClick={handleBack} type="button">
+            ←
+          </button>
+          <div className="chat-header-info">
+            <h1>{convData.productTitle}</h1>
+            <p>Chat con {otherName}</p>
+          </div>
+          <button className="chat-more-btn" type="button" aria-label="Opciones del chat">
+            ⋯
+          </button>
+        </div>
+
         <div className="chat-product-banner">
           <button
             className="chat-product-mini"
             type="button"
             onClick={() => {
-              if (convData.productId) navigate(`/product/${convData.productId}`);
+              if (convData.productId) {
+                navigate(`/product/${convData.productId}`, {
+                  state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } },
+                });
+              }
             }}
           >
             <img className="chat-product-thumb" src={productImg} alt={convData.productTitle} />

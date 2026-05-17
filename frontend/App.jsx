@@ -51,10 +51,15 @@ const AuthRequiredView = ({ title, message, onLogin }) => {
   );
 };
 
+const appRouteState = (location) => ({
+  state: { from: { pathname: location.pathname, search: location.search, hash: location.hash } },
+});
+
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   return (
-    <div className="product-card" onClick={() => navigate(`/product/${product.id}`)} style={{cursor: 'pointer'}}>
+    <div className="product-card" onClick={() => navigate(`/product/${product.id}`, appRouteState(location))} style={{cursor: 'pointer'}}>
       <div 
         className="product-img placeholder-img" 
         style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
@@ -73,6 +78,7 @@ const ProductCard = ({ product }) => {
 
 const HomeView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory, loading, error, toggleFavorite = () => {}, favorites = [] }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const filtered = useMemo(() => {
     const byCategory = activeCategory ? products.filter((p) => (p.category || "Otros") === activeCategory) : products;
     if (!search) return byCategory;
@@ -248,7 +254,7 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
 
             <div className="mq-featured-row">
               {featuredProducts.map((product) => (
-                <article key={product.id} className="mq-featured-card" onClick={() => navigate(`/product/${product.id}`)}>
+                <article key={product.id} className="mq-featured-card" onClick={() => navigate(`/product/${product.id}`, appRouteState(location))}>
                   <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
                   <div className="mq-featured-overlay">
                     <span className="mq-badge">{product.condition || "Nuevo"}</span>
@@ -298,7 +304,7 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
           ) : (
             <div className="mq-products-grid">
               {filtered.map((product) => (
-                <article key={product.id} className="mq-product-card" onClick={() => navigate(`/product/${product.id}`)}>
+                <article key={product.id} className="mq-product-card" onClick={() => navigate(`/product/${product.id}`, appRouteState(location))}>
                   <div className="mq-product-image-wrap">
                     <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
                     <span className="mq-badge">{product.condition || "Nuevo"}</span>
@@ -331,6 +337,7 @@ const HomeView = ({ products, search, setSearch, categories, activeCategory, set
 
 const ExploreView = ({ products, search, setSearch, categories, activeCategory, setActiveCategory }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [promoted, setPromoted] = useState([]);
   const [promotedLoading, setPromotedLoading] = useState(false);
 
@@ -373,6 +380,10 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
     return [...promoted, ...rest];
   }, [filtered, promoted]);
 
+  const openProduct = (productId) => {
+    navigate(`/product/${productId}`, appRouteState(location));
+  };
+
   return (
     <div className="view-container">
       <button className="explore-post-cta" type="button" onClick={() => navigate("/add")}>
@@ -402,24 +413,39 @@ const ExploreView = ({ products, search, setSearch, categories, activeCategory, 
       <h2>Explorar {activeCategory ? `- ${activeCategory}` : ""}</h2>
       {promotedLoading ? <div className="empty-state">Cargando destacados…</div> : null}
       {combined.length === 0 ? <div className="empty-state">No se encontraron productos con esos filtros.</div> : null}
-      <div className="feed-list">
-        {combined.map((p) => (
-          <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`)} style={{cursor: 'pointer'}}>
-            <div 
-              className="feed-img placeholder-img"
-              style={p.imageUrl ? { backgroundImage: `url(${resolveImageSrc(p.imageUrl)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-            ></div>
-            <div className="feed-details">
-              <h4>{p.title}</h4>
-              <div className="product-meta">
-                {p.isPromoted ? <span className="tag zone">Promocionado</span> : null}
-                <span className="tag new">{p.condition || "—"}</span>
-                {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
+      <div className="feed-list explore-feed-list">
+        {combined.map((p) => {
+          const imageSrc = resolveImageSrc(p.imageUrls?.[0] || p.imageUrl);
+
+          return (
+            <article
+              key={p.id}
+              className="feed-item explore-feed-item"
+              onClick={() => openProduct(p.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openProduct(p.id);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="explore-feed-img">
+                <img src={imageSrc} alt={p.title || "Producto en MAQUETI"} loading="lazy" />
               </div>
-              <p className="price-large">{priceLabel(p.price)}</p>
-            </div>
-          </div>
-        ))}
+              <div className="feed-details explore-feed-details">
+                <h4>{p.title}</h4>
+                <p className="price-large">{priceLabel(p.price)}</p>
+                <div className="product-meta">
+                  {p.isPromoted ? <span className="tag zone">Promocionado</span> : null}
+                  <span className="tag new">{p.condition || "—"}</span>
+                  {(p.category || "Otros") ? <span className="tag zone">{p.category || "Otros"}</span> : null}
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );
@@ -805,6 +831,7 @@ const ChatDetailView = ({ token, user }) => {
 
 const FavoritesView = ({ products, favorites }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const favProducts = useMemo(() => {
     return products.filter((p) => favorites.includes(p.id));
   }, [products, favorites]);
@@ -817,7 +844,7 @@ const FavoritesView = ({ products, favorites }) => {
       ) : (
         <div className="feed-list">
           {favProducts.map((p) => (
-            <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`)} style={{cursor: 'pointer'}}>
+            <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`, appRouteState(location))} style={{cursor: 'pointer'}}>
               <div 
                 className="feed-img placeholder-img"
                 style={p.imageUrl ? { backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}

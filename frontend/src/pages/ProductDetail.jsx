@@ -1,11 +1,42 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getApiUrl, parseJsonResponse, resolveImageSrc, fetchProductById } from "../services/api";
 import { priceLabel } from "../services/format";
+
+const normalizeSellerName = (value) => {
+  const name = String(value || "").trim();
+  if (!name || name.toLowerCase() === "vendedor") return "";
+  return name;
+};
+
+const getSellerName = (product) => {
+  if (!product) return "";
+  return (
+    normalizeSellerName(product.sellerName) ||
+    normalizeSellerName(product.seller?.name) ||
+    normalizeSellerName(product.userName) ||
+    normalizeSellerName(product.ownerName)
+  );
+};
+
+const fetchSellerNameByUserId = async (userId) => {
+  if (!userId) return "";
+  try {
+    const res = await fetch(`${getApiUrl()}/api/users`);
+    const data = await parseJsonResponse(res);
+    if (!res.ok) return "";
+    const users = Array.isArray(data?.users) ? data.users : [];
+    const seller = users.find((u) => String(u.id) === String(userId));
+    return normalizeSellerName(seller?.name);
+  } catch {
+    return "";
+  }
+};
 
 export default function ProductDetailPage({ products, toggleFavorite, favorites, onRequireAuth }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const productFromList = useMemo(() => products.find((p) => String(p.id) === String(id)) || null, [products, id]);
   const [product, setProduct] = useState(productFromList);
   const [loading, setLoading] = useState(!productFromList);
@@ -18,20 +49,24 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
       setProduct(productFromList);
       setLoading(false);
       setError("");
-      return;
     }
 
     let cancelled = false;
+    const shouldFetchFullProduct = !productFromList || !getSellerName(productFromList);
+    if (!shouldFetchFullProduct) return undefined;
+
     const load = async () => {
       try {
-        setLoading(true);
+        if (!productFromList) setLoading(true);
         setError("");
         const data = await fetchProductById(id);
+        const detailProduct = data?.product || null;
+        const sellerName = getSellerName(detailProduct) || (await fetchSellerNameByUserId(detailProduct?.userId || productFromList?.userId));
         if (cancelled) return;
-        setProduct(data?.product || null);
+        setProduct(detailProduct ? { ...productFromList, ...detailProduct, sellerName: sellerName || detailProduct.sellerName || productFromList?.sellerName || "" } : productFromList || null);
       } catch (e) {
         if (cancelled) return;
-        setError(e?.message || "No se pudo cargar el producto");
+        if (!productFromList) setError(e?.message || "No se pudo cargar el producto");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -43,6 +78,7 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
   }, [id, productFromList]);
 
   const isFav = product ? favorites.includes(product.id) : false;
+  const sellerDisplayName = useMemo(() => getSellerName(product) || "Vendedor", [product]);
   const images = useMemo(() => {
     if (!product) return [];
     const arr = Array.isArray(product.imageUrls) ? product.imageUrls : [];
@@ -52,12 +88,12 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
     return [];
   }, [product]);
   const sellerInitials = useMemo(() => {
-    const name = String(product?.sellerName || "Vendedor").trim();
+    const name = String(sellerDisplayName).trim();
     const parts = name.split(/\s+/).filter(Boolean);
     const a = parts[0]?.[0] || "V";
     const b = parts[1]?.[0] || parts[0]?.[1] || "D";
     return `${a}${b}`.toUpperCase();
-  }, [product?.sellerName]);
+  }, [sellerDisplayName]);
 
   useEffect(() => {
     setActiveImage(0);
@@ -94,11 +130,21 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
     }
   };
 
+  const handleBack = () => {
+    const from = location.state?.from;
+    const pathname = typeof from === "string" ? from : from?.pathname;
+    const search = typeof from === "object" && from?.search ? from.search : "";
+    const hash = typeof from === "object" && from?.hash ? from.hash : "";
+    const isSafeAppPath = typeof pathname === "string" && pathname.startsWith("/") && pathname !== location.pathname && !pathname.startsWith("/product/");
+
+    navigate(isSafeAppPath ? `${pathname}${search}${hash}` : "/", { replace: true });
+  };
+
   return (
     <div className="pd-page">
       <main className="pd-main">
         <div className="pd-inline-nav">
-          <button className="pd-back-btn" onClick={() => navigate(-1)} type="button">
+          <button className="pd-back-btn" onClick={handleBack} type="button">
             ← Volver
           </button>
         </div>
@@ -115,7 +161,7 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
         ) : product ? (
           <div className="pd-grid">
             <section className="pd-gallery-card">
-              <div className="pd-gallery-badge">Publicado en MAQUETI</div>
+              <div className="pd-gallery-badge">Publicado por {sellerDisplayName}</div>
               <img src={resolveImageSrc(images[activeImage] || product.imageUrl)} alt={product.title} className="pd-main-image" />
               {images.length > 1 ? (
                 <div className="pd-thumbs" role="list">
@@ -162,7 +208,7 @@ export default function ProductDetailPage({ products, toggleFavorite, favorites,
               <div className="pd-seller-box">
                 <div className="pd-seller-avatar">{sellerInitials}</div>
                 <div>
-                  <h4>{product.sellerName || "Vendedor"}</h4>
+                  <h4>{sellerDisplayName}</h4>
                   <p>Vendedor activo en MAQUETI</p>
                 </div>
                 <button type="button" onClick={handleContactSeller}>Contactar</button>
