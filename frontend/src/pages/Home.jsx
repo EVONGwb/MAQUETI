@@ -86,6 +86,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
     const source = filteredProducts.length ? filteredProducts : products;
     return source.slice(0, 3);
   }, [filteredProducts, products]);
+  const heroShowcaseProducts = heroPreviewProducts.length ? heroPreviewProducts : products.slice(0, 3);
   const marketplaceStats = useMemo(
     () => [
       { value: products.length || "0", label: "productos activos" },
@@ -216,8 +217,6 @@ export default function HomePage({ products, search, setSearch, categories, acti
               Compra, vende y negocia <span>sin perder el ritmo</span>
             </h2>
 
-            <p>Descubre productos cerca de ti, habla con vendedores, guarda favoritos y crea tu tienda con una experiencia rápida, visual y preparada para crecer.</p>
-
             <div className="st-hero-cta-row">
               <button className="st-primary-btn" type="button" onClick={() => (token ? navigate("/add") : onRequireAuth?.())}>
                 Publicar producto
@@ -241,45 +240,38 @@ export default function HomePage({ products, search, setSearch, categories, acti
           </motion.div>
 
           <motion.div className="st-hero-side" variants={stagger}>
-            <motion.div className="st-market-panel" variants={revealFast}>
-              <div className="st-market-panel-head">
-                <span>Ahora en MAQUETI</span>
-                <button type="button" onClick={() => scrollToId("st-trending")}>Ver tendencias</button>
-              </div>
-
-              <div className="st-live-stack">
+            <motion.div className="st-market-panel st-market-panel-compact st-market-panel-screen-only" variants={revealFast}>
+              <div className="st-market-screen" aria-label="Escaparate de productos">
                 {loading
-                  ? productSkeletons.slice(0, 3).map((s) => (
-                      <div className="st-live-card st-skeleton-card" key={s.id}>
-                        <div className="st-skeleton st-live-thumb" />
-                        <div className="st-live-info">
-                          <div className="st-skeleton st-skeleton-line st-w-70" />
-                          <div className="st-skeleton st-skeleton-line st-w-40" />
-                        </div>
+                  ? (
+                    <div className="st-screen-slide st-screen-slide-active">
+                      <div className="st-skeleton st-screen-image" />
+                      <div className="st-screen-caption">
+                        <div className="st-skeleton st-skeleton-line st-w-70" />
+                        <div className="st-skeleton st-skeleton-line st-w-40" />
                       </div>
-                    ))
-                  : heroPreviewProducts.map((product) => (
-                      <button className="st-live-card" type="button" key={product.id} onClick={() => openProduct(product.id)}>
-                        <img src={resolveImageSrc(product.imageUrl)} alt={product.title} />
-                        <span className="st-live-glow" />
-                        <div className="st-live-info">
+                    </div>
+                  )
+                  : heroShowcaseProducts.map((product, index) => (
+                      <button
+                        className="st-screen-slide"
+                        type="button"
+                        key={product.id}
+                        onClick={() => openProduct(product.id)}
+                        style={{ "--slide-index": index }}
+                      >
+                        <img className="st-screen-image" src={resolveImageSrc(product.imageUrl)} alt={product.title} />
+                        <div className="st-screen-live">
+                          <span />
+                          En escaparate
+                        </div>
+                        <div className="st-screen-caption">
                           <p>{product.category || "Producto"}</p>
                           <strong>{product.title}</strong>
                           <small>{priceLabel(product.price)} · {product.location || "Sin ubicación"}</small>
                         </div>
                       </button>
                     ))}
-              </div>
-
-              <div className="st-market-strip">
-                <div>
-                  <strong>Chat directo</strong>
-                  <span>Negocia sin salir de la app</span>
-                </div>
-                <div>
-                  <strong>Tiendas</strong>
-                  <span>Escaparates para vendedores</span>
-                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -487,7 +479,7 @@ export default function HomePage({ products, search, setSearch, categories, acti
           )}
         </motion.section>
 
-        <motion.section className="st-section" variants={revealFast}>
+        <motion.section className="st-section st-recent-section" variants={revealFast}>
           <div className="st-section-head">
             <div>
               <p className="st-section-kicker">✨ Recién publicado</p>
