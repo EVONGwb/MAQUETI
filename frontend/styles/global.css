@@ -7722,6 +7722,110 @@ select {
   }
 }
 
+/* Product grids: 3 across on mobile */
+@media (max-width: 720px) {
+  .explore-feed-list,
+  .favorites-products-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .explore-feed-item,
+  .favorite-product-item {
+    min-width: 0;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .explore-feed-img,
+  .favorite-product-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto !important;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .explore-feed-details,
+  .favorite-product-details {
+    min-width: 0;
+    padding: 7px;
+  }
+
+  .explore-feed-details h4,
+  .favorite-product-details h4 {
+    display: -webkit-box;
+    min-height: 26px;
+    margin: 0 0 5px;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 850;
+    line-height: 1.1;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .explore-feed-details .price-large,
+  .favorite-product-details .price-large {
+    margin: 0 0 4px;
+    color: #020617;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .explore-feed-details .product-meta,
+  .favorite-product-details .product-meta {
+    display: flex;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  .explore-feed-details .tag,
+  .favorite-product-details .tag {
+    max-width: 100%;
+    min-height: 18px;
+    margin: 0;
+    padding: 3px 5px;
+    overflow: hidden;
+    border-radius: 7px;
+    font-size: 8px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .explore-feed-list,
+  .favorites-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .explore-feed-details,
+  .favorite-product-details {
+    padding: 6px;
+  }
+
+  .explore-feed-details h4,
+  .favorite-product-details h4 {
+    font-size: 11px;
+  }
+
+  .explore-feed-details .price-large,
+  .favorite-product-details .price-large {
+    font-size: 14px;
+  }
+}
+
 /* Compact Pro shop catalog */
 .shop-product-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));

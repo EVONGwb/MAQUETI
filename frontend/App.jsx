@@ -842,14 +842,14 @@ const FavoritesView = ({ products, favorites }) => {
       {favProducts.length === 0 ? (
         <div className="empty-state">No tienes ningún producto en favoritos.</div>
       ) : (
-        <div className="feed-list">
+        <div className="feed-list favorites-products-grid">
           {favProducts.map((p) => (
-            <div key={p.id} className="feed-item" onClick={() => navigate(`/product/${p.id}`, appRouteState(location))} style={{cursor: 'pointer'}}>
+            <div key={p.id} className="feed-item favorite-product-item" onClick={() => navigate(`/product/${p.id}`, appRouteState(location))} style={{cursor: 'pointer'}}>
               <div 
-                className="feed-img placeholder-img"
+                className="feed-img placeholder-img favorite-product-img"
                 style={p.imageUrl ? { backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
               ></div>
-              <div className="feed-details">
+              <div className="feed-details favorite-product-details">
                 <h4>{p.title}</h4>
                 <div className="product-meta">
                   <span className="tag new">{p.condition || "—"}</span>
